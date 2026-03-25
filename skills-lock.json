@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "skills": {
+    "authoring-skills": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "38eb8cbf9e1739429a233e57196faa92a7d1436940e121776df17b808e44652a"
+    },
+    "dce-edge": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "7cd22f4bb113f37f14740d373b8a63d51c55aab2befdd980b26b17e5107d8e93"
+    },
+    "flags": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "2ce1c081406d5815aa949a1e6b01496e9d2ebd1426d0334e8e5e35d132f7fcac"
+    },
+    "pr-status-triage": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "c65234300651e714315fda51fa8a0da10a5fe90fcee53024f8360ec116b937ec"
+    },
+    "react-vendoring": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "372b5cbc251e93da3759680b943ca1481cd268dbde1f0bd537fb16331c44279b"
+    },
+    "router-act": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "e4ddba28b80deea6f9c7d5ec804f0cd0198beb2fcc90bb37e985980a2a7c41c4"
+    },
+    "runtime-debug": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "6492f09c2281f9af8ab3b346234723c6070d58bb86bccc1ee2f3ad4c5c106b3a"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9c87c315aed143ee3b34bec8117100f5035e0df09e6b23e1ecc772cff434c9ad"
+    },
+    "update-docs": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "b5f495ca63a08c70523ed59fbcf5b5665603d77299d8524ccddeacce024cbb33"
+    },
+    "v8-jit": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "ce69f186f99ee02c10c88d51a3dda666c762813c13e83990679d9c6f33f96c90"
+    },
+    "write-api-reference": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "4d0a62b91470170ba15620ea4355e4ea6e712d4937c6046f2050359a3bb5ec8c"
+    },
+    "write-guide": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "computedHash": "9d19ed82bf178aa52d510caca6718daaa14048f76673cb1312449faf85c4e31f"
+    }
+  }
+}

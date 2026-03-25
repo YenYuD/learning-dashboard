@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum BoardType {
+  TASK_BASED
+  TIME_ONLY
+}
+
+
+model Board {
+  id String @id @default(uuid())
+  name String 
+  type BoardType @default(TASK_BASED)
+  icon String?
+  color String?
+  lists List[]
+  order Int
+  user_id String
+  timeEntries TimeEntry[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model List {
+  id String @id @default(uuid())
+  name String
+  boardId String          
+  board   Board @relation(fields: [boardId], references: [id],onDelete: Cascade)  
+  tasks Task[]
+  order Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  @@index([boardId])
+}
+
+
+model Task {
+  id String @id @default(uuid())
+  title String
+  description String?
+  listId String
+  list List @relation(fields: [listId], references: [id],onDelete: Cascade)
+  order Int
+  timeEntries TimeEntry[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  @@index([listId])
+}
+
+model TimeEntry {
+  id String @id @default(uuid())
+  boardId String
+  board Board @relation(fields: [boardId], references: [id],onDelete: Cascade)
+  taskId String?
+  task Task? @relation(fields: [taskId], references: [id],onDelete: SetNull)
+  duration Int
+  startTime DateTime?
+  endTime DateTime?
+  note String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  @@index([boardId])
+  @@index([taskId])
+}
+
+
