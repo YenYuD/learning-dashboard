@@ -2,12 +2,19 @@
  * This file contains the root router of your tRPC-backend
  */
 import { createCallerFactory, publicProcedure, router } from '../trpc';
-import { postRouter } from './post';
+import { boardRouter } from './board';
+// import { listRouter } from './list';
+// import { taskRouter } from './task';
+// import { timeEntryRouter } from './timeEntry';
 
 export const appRouter = router({
-  healthcheck: publicProcedure.query(() => 'yay!'),
+  healthcheck: publicProcedure.query(() => 'Learning Dashboard API is running!'),
 
-  post: postRouter,
+  // Add your routers here:
+  board: boardRouter,
+  // list: listRouter,
+  // task: taskRouter,
+  // timeEntry: timeEntryRouter,
 });
 
 export const createCaller = createCallerFactory(appRouter);
