@@ -38,6 +38,35 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
   const utils = trpc.useUtils();
 
   const createBoard = trpc.board.create.useMutation({
+    onMutate: async (input) => {
+      await utils.board.list.cancel({ userId: MOCK_USER_ID });
+      const previous = utils.board.list.getData({ userId: MOCK_USER_ID });
+      utils.board.list.setData({ userId: MOCK_USER_ID }, (old) => {
+        if (!old) return old;
+        return [
+          ...old,
+          {
+            id: `optimistic-${Date.now()}`,
+            name: input.name,
+            type: input.type,
+            icon: input.icon ?? null,
+            color: input.color ?? null,
+            order: old.length,
+            user_id: MOCK_USER_ID,
+            lists: [],
+            timeEntries: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ];
+      });
+      return { previous };
+    },
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        utils.board.list.setData({ userId: MOCK_USER_ID }, context.previous);
+      }
+    },
     onSuccess: (newBoard) => {
       utils.board.list.invalidate({ userId: MOCK_USER_ID });
       onOpenChange(false);
