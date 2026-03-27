@@ -80,5 +80,8 @@
   },
   "publishConfig": {
     "access": "restricted"
+  },
+  "volta": {
+    "node": "22.22.2"
   }
 }

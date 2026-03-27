@@ -125,14 +125,35 @@ async function main() {
     },
   });
 
+  // 取回 task ids 以便建立 time entries
+  const englishBoardWithTasks = await prisma.board.findUnique({
+    where: { id: englishBoard.id },
+    include: { lists: { include: { tasks: true } } },
+  });
+  const vocabList = englishBoardWithTasks!.lists.find(l => l.name === 'Vocabulary');
+  const toeflTask = vocabList!.tasks.find(t => t.title === 'Memorize 50 TOEFL words');
+  const reviewTask = vocabList!.tasks.find(t => t.title === 'Review last week vocabulary');
+
   // Add some sample time entries
   await prisma.timeEntry.create({
     data: {
       boardId: englishBoard.id,
+      taskId: toeflTask!.id,
       duration: 90, // 1.5 hours in minutes
       startTime: new Date('2026-03-24T10:00:00'),
       endTime: new Date('2026-03-24T11:30:00'),
       note: 'Vocabulary practice',
+    },
+  });
+
+  await prisma.timeEntry.create({
+    data: {
+      boardId: englishBoard.id,
+      taskId: reviewTask!.id,
+      duration: 60,
+      startTime: new Date('2026-03-23T09:00:00'),
+      endTime: new Date('2026-03-23T10:00:00'),
+      note: 'Review last week vocabulary',
     },
   });
 

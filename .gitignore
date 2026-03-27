@@ -46,3 +46,5 @@ playwright/test-results
 
 #claude
 .claude
+
+.worktrees
