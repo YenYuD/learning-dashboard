@@ -207,6 +207,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
                 boardId={boardId}
                 title={list.name}
                 tasks={list.tasks}
+                allLists={lists.map((l) => ({ id: l.id, name: l.name }))}
               />
             ))}
           </SortableContext>

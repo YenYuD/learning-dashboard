@@ -28,14 +28,20 @@ interface Task {
   totalMinutes?: number;
 }
 
+interface ListOption {
+  id: string;
+  name: string;
+}
+
 interface SortableListColumnProps {
   listId: string;
   boardId: string;
   title: string;
   tasks: Task[];
+  allLists: ListOption[];
 }
 
-export function SortableListColumn({ listId, boardId, title, tasks }: SortableListColumnProps) {
+export function SortableListColumn({ listId, boardId, title, tasks, allLists }: SortableListColumnProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -158,7 +164,7 @@ export function SortableListColumn({ listId, boardId, title, tasks }: SortableLi
 
         {/* Add task */}
         <div className="px-2 pb-2">
-          <AddTaskButton listId={listId} boardId={boardId} />
+          <AddTaskButton listId={listId} boardId={boardId} lists={allLists} />
         </div>
       </div>
 
