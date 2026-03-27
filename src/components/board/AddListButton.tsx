@@ -17,7 +17,7 @@ export function AddListButton({ onClick }: AddListButtonProps) {
         onClick={onClick}
       >
         <Plus size={16} />
-        新增 List
+        新增清單
       </Button>
     </div>
   );

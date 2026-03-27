@@ -24,8 +24,9 @@ export function Sidebar() {
     <>
       <aside className="flex h-full w-60 flex-col bg-sidebar text-sidebar-foreground">
         {/* Logo */}
-        <div className="flex h-14 items-center px-4 border-b border-sidebar-border">
-          <span className="text-lg font-bold tracking-tight">Learning</span>
+        <div className="flex h-14 items-center gap-3 px-4 border-b border-sidebar-border">
+          <div className="h-8 w-8 shrink-0 rounded bg-sidebar-accent" />
+          <span className="text-lg font-semibold text-sidebar-foreground">Learning</span>
         </div>
 
         {/* Nav */}
@@ -34,9 +35,9 @@ export function Sidebar() {
           <Link
             href="/dashboard"
             className={cn(
-              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors relative',
               pathname === '/dashboard'
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                ? 'text-sidebar-accent before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:rounded-full before:bg-sidebar-accent'
                 : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
             )}
           >
@@ -62,9 +63,9 @@ export function Sidebar() {
                   key={board.id}
                   href={`/board/${board.id}`}
                   className={cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative',
                     pathname === `/board/${board.id}`
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                      ? 'text-sidebar-accent-foreground font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:rounded-full before:bg-sidebar-accent'
                       : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
                   )}
                 >

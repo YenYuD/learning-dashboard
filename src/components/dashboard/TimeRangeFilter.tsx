@@ -12,10 +12,25 @@ interface TimeRangeFilterProps {
 export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
   return (
     <Tabs value={value} onValueChange={(v) => onChange(v as TimeRange)}>
-      <TabsList>
-        <TabsTrigger value="today">今天</TabsTrigger>
-        <TabsTrigger value="week">本週</TabsTrigger>
-        <TabsTrigger value="month">本月</TabsTrigger>
+      <TabsList className="bg-secondary p-1 gap-1">
+        <TabsTrigger
+          value="today"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+        >
+          今天
+        </TabsTrigger>
+        <TabsTrigger
+          value="week"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+        >
+          本週
+        </TabsTrigger>
+        <TabsTrigger
+          value="month"
+          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+        >
+          本月
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );

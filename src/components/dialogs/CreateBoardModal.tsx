@@ -21,10 +21,16 @@ interface CreateBoardModalProps {
 
 type TemplateId = (typeof BOARD_TEMPLATES)[number]['id'];
 
+// 設計稿顯示的 4 個模板（2×2 grid）
+const DISPLAY_TEMPLATES = BOARD_TEMPLATES.filter((t) =>
+  ['language', 'programming', 'sport', 'fitness'].includes(t.id),
+);
+
 export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('language');
   const [boardName, setBoardName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string>(BOARD_COLORS[0].value);
+  const [boardIcon, setBoardIcon] = useState('');
 
   const selectedTemplateData = BOARD_TEMPLATES.find(
     (t) => t.id === selectedTemplate,
@@ -37,6 +43,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
       name: boardName,
       template: selectedTemplate,
       color: selectedColor,
+      icon: boardIcon || selectedTemplateData?.icon,
       type: selectedTemplateData?.type,
       defaultLists: selectedTemplateData?.defaultLists,
     });
@@ -44,6 +51,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
     setBoardName('');
     setSelectedTemplate('language');
     setSelectedColor(BOARD_COLORS[0].value);
+    setBoardIcon('');
   };
 
   return (
@@ -54,11 +62,11 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Template selection */}
+          {/* Template selection — 2×2 grid */}
           <div>
             <p className="text-sm font-medium mb-3">選擇模板</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {BOARD_TEMPLATES.map((template) => (
+            <div className="grid grid-cols-2 gap-2">
+              {DISPLAY_TEMPLATES.map((template) => (
                 <button
                   key={template.id}
                   type="button"
@@ -92,50 +100,45 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
               />
             </div>
 
-            <div>
-              <label className="text-xs text-muted-foreground mb-1.5 block">
-                顏色
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {BOARD_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    title={color.label}
-                    onClick={() => setSelectedColor(color.value)}
-                    className={cn(
-                      'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110',
-                      selectedColor === color.value
-                        ? 'border-foreground scale-110'
-                        : 'border-transparent',
-                    )}
-                    style={{ backgroundColor: color.value }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Preview */}
-            {boardName && (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Icon */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1.5 block">
-                  預覽
+                  Icon
                 </label>
-                <div
-                  className="rounded-lg border p-3 text-sm"
-                  style={{ backgroundColor: selectedColor }}
-                >
-                  <p className="font-semibold">
-                    {selectedTemplateData?.icon} {boardName}
-                  </p>
-                  {selectedTemplateData && selectedTemplateData.defaultLists.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      包含: {(selectedTemplateData.defaultLists as readonly string[]).join(' · ')}
-                    </p>
-                  )}
+                <Input
+                  placeholder={selectedTemplateData?.icon ?? '🎯'}
+                  value={boardIcon}
+                  onChange={(e) => setBoardIcon(e.target.value)}
+                  className="text-center text-lg"
+                  maxLength={2}
+                />
+              </div>
+
+              {/* 顏色 */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">
+                  顏色
+                </label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {BOARD_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      title={color.label}
+                      onClick={() => setSelectedColor(color.value)}
+                      className={cn(
+                        'h-7 w-7 rounded border-2 transition-transform hover:scale-110',
+                        selectedColor === color.value
+                          ? 'border-foreground scale-110'
+                          : 'border-transparent',
+                      )}
+                      style={{ backgroundColor: color.value }}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 

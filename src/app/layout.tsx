@@ -1,9 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Space_Grotesk } from 'next/font/google';
 import { TRPCReactProvider } from '~/utils/trpc-provider';
 
-const inter = Inter({ subsets: ['latin'] });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Learning & Growth Dashboard',
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-TW">
-      <body className={inter.className}>
+      <body className={spaceGrotesk.className}>
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>

@@ -50,10 +50,13 @@ export function TaskCard({
           <Button
             size="sm"
             variant={isTimerRunning ? 'default' : 'outline'}
-            className="h-7 gap-1 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+            className={cn(
+              'h-7 gap-1 px-2 text-xs transition-opacity',
+              isTimerRunning ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            )}
           >
             <Play size={10} />
-            {isTimerRunning ? 'Running' : 'Start'}
+            {isTimerRunning ? 'Running' : 'Start timer'}
           </Button>
         </div>
       </CardContent>

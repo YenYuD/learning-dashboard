@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { WEEKLY_BAR_DATA } from '~/lib/mock-data';
 
-const BOARD_COLORS = ['#EF4444', '#3B82F6', '#10B981'];
+const BOARD_COLOR = '#E42313';
 const BOARD_KEYS = ['英文學習', 'LeetCode', '滑雪'];
 
 export function WeeklyBarChart() {
@@ -50,7 +50,7 @@ export function WeeklyBarChart() {
               wrapperStyle={{ fontSize: 12 }}
             />
             {BOARD_KEYS.map((key, i) => (
-              <Bar key={key} dataKey={key} stackId="a" fill={BOARD_COLORS[i]} radius={i === BOARD_KEYS.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+              <Bar key={key} dataKey={key} stackId="a" fill={BOARD_COLOR} radius={i === BOARD_KEYS.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
             ))}
           </BarChart>
         </ResponsiveContainer>

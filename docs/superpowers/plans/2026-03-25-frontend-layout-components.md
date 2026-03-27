@@ -119,44 +119,48 @@ Expected: 無 TypeScript 錯誤。
 @layer base {
   :root {
     /* === shadcn 核心變數（紅色主題） === */
-    --background: 220 14% 96%;
-    --foreground: 222 47% 11%;
+    /* 色彩來源：pencil-new.pen 設計稿                          */
+    /* #FAFAFA 頁面背景 / #0D0D0D 主文字 / #E42313 紅色主色    */
+    /* #7A7A7A 次要文字 / #FFFFFF 卡片 / #E8E8E8 邊框          */
+    --background: 0 0% 98%;          /* #FAFAFA — Board 畫布背景 */
+    --foreground: 0 0% 5%;           /* #0D0D0D — 主要文字 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 0 0% 5%;      /* #0D0D0D */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 5%;
 
-    --primary: 0 84% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 4 84% 48%;            /* #E42313 — 品牌紅 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 0 0% 98%;           /* #FAFAFA */
+    --secondary-foreground: 0 0% 5%;
 
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 0 0% 98%;               /* #FAFAFA */
+    --muted-foreground: 0 0% 48%;    /* #7A7A7A */
 
-    --accent: 220 14% 92%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 0 0% 98%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 4 84% 48%;        /* #E42313 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 0 84% 60%;
+    --border: 0 0% 91%;              /* #E8E8E8 */
+    --input: 0 0% 91%;               /* #E8E8E8 */
+    --ring: 4 84% 48%;               /* #E42313 */
 
     --radius: 0.5rem;
 
-    /* === Sidebar 自訂變數 === */
-    --sidebar-background: 0 0% 11%;
-    --sidebar-foreground: 0 0% 94%;
-    --sidebar-accent: 0 84% 60%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-muted: 0 0% 20%;
-    --sidebar-muted-foreground: 0 0% 65%;
-    --sidebar-border: 0 0% 18%;
+    /* === Sidebar 自訂變數（白色主題，來自設計稿） === */
+    /* 設計稿 Sidebar fill = #FFFFFF，非深色               */
+    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
+    --sidebar-foreground: 0 0% 5%;            /* #0D0D0D */
+    --sidebar-accent: 4 84% 48%;              /* #E42313 — 選中項紅色 */
+    --sidebar-accent-foreground: 0 0% 100%;   /* #FFFFFF */
+    --sidebar-muted: 0 0% 98%;                /* #FAFAFA — hover 背景 */
+    --sidebar-muted-foreground: 0 0% 48%;     /* #7A7A7A — 未選中文字 */
+    --sidebar-border: 0 0% 91%;               /* #E8E8E8 */
   }
 
   * {
@@ -660,7 +664,7 @@ export default function AppLayout({
 pnpm typecheck
 ```
 
-瀏覽 http://localhost:3000/dashboard — 左側應顯示深色 Sidebar，含「Learning」logo、Dashboard 連結、空的 Boards 區塊、底部「新增 Board」按鈕。
+瀏覽 http://localhost:3000/dashboard — 左側應顯示**白色 Sidebar**（#FFFFFF），含紅色 logo 圖示、深色「Learning」文字、Dashboard 連結（active 時文字與左側指示點為紅色 #E42313）、空的 Boards 區塊、底部「新增 Board」按鈕（文字 #7A7A7A）。右側主內容區背景 #FAFAFA。
 
 - [ ] **Step 7: Commit**
 

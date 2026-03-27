@@ -5,44 +5,45 @@
 @layer base {
   :root {
     /* === shadcn 核心變數（紅色主題） === */
-    --background: 220 14% 96%;
-    --foreground: 222 47% 11%;
+    /* 色彩來源：pencil-new.pen 設計稿 */
+    --background: 0 0% 98%;          /* #FAFAFA */
+    --foreground: 0 0% 5%;           /* #0D0D0D */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 0 0% 5%;      /* #0D0D0D */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 5%;
 
-    --primary: 0 84% 60%;
+    --primary: 4 84% 48%;            /* #E42313 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 0 0% 98%;           /* #FAFAFA */
+    --secondary-foreground: 0 0% 5%;
 
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 0 0% 98%;               /* #FAFAFA */
+    --muted-foreground: 0 0% 48%;    /* #7A7A7A */
 
-    --accent: 220 14% 92%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 0 0% 98%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 4 84% 48%;        /* #E42313 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 0 84% 60%;
+    --border: 0 0% 91%;              /* #E8E8E8 */
+    --input: 0 0% 91%;               /* #E8E8E8 */
+    --ring: 4 84% 48%;               /* #E42313 */
 
     --radius: 0.5rem;
 
-    /* === Sidebar 自訂變數 === */
-    --sidebar-background: 0 0% 11%;
-    --sidebar-foreground: 0 0% 94%;
-    --sidebar-accent: 0 84% 60%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-muted: 0 0% 20%;
-    --sidebar-muted-foreground: 0 0% 65%;
-    --sidebar-border: 0 0% 18%;
+    /* === Sidebar 自訂變數（白色主題，來自設計稿） === */
+    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
+    --sidebar-foreground: 0 0% 5%;            /* #0D0D0D */
+    --sidebar-accent: 4 84% 48%;              /* #E42313 */
+    --sidebar-accent-foreground: 0 0% 100%;   /* #FFFFFF */
+    --sidebar-muted: 0 0% 98%;                /* #FAFAFA */
+    --sidebar-muted-foreground: 0 0% 48%;     /* #7A7A7A */
+    --sidebar-border: 0 0% 91%;               /* #E8E8E8 */
   }
 
   * {
