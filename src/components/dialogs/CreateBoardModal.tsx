@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,8 @@ import {
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { cn } from '~/lib/utils';
-import { BOARD_COLORS, BOARD_TEMPLATES } from '~/lib/constants';
+import { BOARD_COLORS, BOARD_TEMPLATES, MOCK_USER_ID } from '~/lib/constants';
+import { trpc } from '~/utils/trpc';
 
 interface CreateBoardModalProps {
   open: boolean;
@@ -32,26 +34,34 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
   const [selectedColor, setSelectedColor] = useState<string>(BOARD_COLORS[0].value);
   const [boardIcon, setBoardIcon] = useState('');
 
+  const router = useRouter();
+  const utils = trpc.useUtils();
+
+  const createBoard = trpc.board.create.useMutation({
+    onSuccess: (newBoard) => {
+      utils.board.list.invalidate({ userId: MOCK_USER_ID });
+      onOpenChange(false);
+      setBoardName('');
+      setSelectedTemplate('language');
+      setSelectedColor(BOARD_COLORS[0].value);
+      setBoardIcon('');
+      router.push(`/board/${newBoard.id}`);
+    },
+  });
+
   const selectedTemplateData = BOARD_TEMPLATES.find(
     (t) => t.id === selectedTemplate,
   );
 
   const handleCreate = () => {
     if (!boardName.trim()) return;
-    // TODO: 串接 trpc.board.create
-    console.log('Create board:', {
-      name: boardName,
-      template: selectedTemplate,
-      color: selectedColor,
+    createBoard.mutate({
+      name: boardName.trim(),
+      type: selectedTemplateData?.type ?? 'TASK_BASED',
+      userId: MOCK_USER_ID,
       icon: boardIcon || selectedTemplateData?.icon,
-      type: selectedTemplateData?.type,
-      defaultLists: selectedTemplateData?.defaultLists,
+      color: selectedColor,
     });
-    onOpenChange(false);
-    setBoardName('');
-    setSelectedTemplate('language');
-    setSelectedColor(BOARD_COLORS[0].value);
-    setBoardIcon('');
   };
 
   return (
@@ -146,8 +156,11 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button onClick={handleCreate} disabled={!boardName.trim()}>
-            建立 Board
+          <Button
+            onClick={handleCreate}
+            disabled={!boardName.trim() || createBoard.isPending}
+          >
+            {createBoard.isPending ? '建立中...' : '建立 Board'}
           </Button>
         </DialogFooter>
       </DialogContent>
