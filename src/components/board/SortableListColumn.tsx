@@ -1,6 +1,10 @@
-// src/components/board/ListColumn.tsx
+// src/components/board/SortableListColumn.tsx
 'use client';
 
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { useState, useRef, useEffect } from 'react';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
@@ -11,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import { TaskCard } from './TaskCard';
+import { SortableTaskCard } from './SortableTaskCard';
 import { AddTaskButton } from './AddTaskButton';
 import { TaskDetailModal } from '~/components/dialogs/TaskDetailModal';
 import { trpc } from '~/utils/trpc';
@@ -24,19 +28,31 @@ interface Task {
   totalMinutes?: number;
 }
 
-interface ListColumnProps {
+interface SortableListColumnProps {
   listId: string;
   boardId: string;
   title: string;
   tasks: Task[];
 }
 
-export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
+export function SortableListColumn({ listId, boardId, title, tasks }: SortableListColumnProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(title);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const renameRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: listId, data: { type: 'list' } });
+
+  // Make the list body a droppable area for tasks
+  const { setNodeRef: setDropRef } = useDroppable({ id: `list-drop-${listId}`, data: { type: 'list', listId } });
 
   const updateList = trpc.list.update.useMutation({
     onSuccess: () => {
@@ -69,21 +85,23 @@ export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
   };
 
   const handleRenameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleRenameSubmit();
-    }
-    if (e.key === 'Escape') {
-      setIsRenaming(false);
-      setRenameValue(title);
-    }
+    if (e.key === 'Enter') { e.preventDefault(); handleRenameSubmit(); }
+    if (e.key === 'Escape') { setIsRenaming(false); setRenameValue(title); }
   };
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const taskIds = tasks.map((t) => t.id);
 
   return (
     <>
-      <div className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60">
-        {/* List header */}
-        <div className="flex items-center justify-between px-3 py-2.5">
+      <div ref={setNodeRef} style={style} className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60">
+        {/* List header - draggable */}
+        <div className="flex items-center justify-between px-3 py-2.5 cursor-grab" {...attributes} {...listeners}>
           {isRenaming ? (
             <Input
               ref={renameRef}
@@ -93,6 +111,8 @@ export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
               onBlur={handleRenameSubmit}
               className="h-7 text-sm font-semibold"
               disabled={updateList.isPending}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
             />
           ) : (
             <h3 className="text-sm font-semibold">{title}</h3>
@@ -100,16 +120,12 @@ export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
           <DropdownMenu>
             <DropdownMenuTrigger
               className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent hover:text-accent-foreground"
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <MoreHorizontal size={14} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setRenameValue(title);
-                  setIsRenaming(true);
-                }}
-              >
+              <DropdownMenuItem onClick={() => { setRenameValue(title); setIsRenaming(true); }}>
                 <Pencil size={14} className="mr-2" />
                 重新命名
               </DropdownMenuItem>
@@ -124,17 +140,20 @@ export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
           </DropdownMenu>
         </div>
 
-        {/* Task cards */}
-        <div className="flex flex-col gap-2 px-2 pb-2 min-h-[60px]">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              title={task.title}
-              description={task.description}
-              totalMinutes={task.totalMinutes}
-              onClick={() => setSelectedTask(task)}
-            />
-          ))}
+        {/* Task cards - droppable area */}
+        <div ref={setDropRef} className="flex flex-col gap-2 px-2 pb-2 min-h-[60px]">
+          <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+            {tasks.map((task) => (
+              <SortableTaskCard
+                key={task.id}
+                id={task.id}
+                title={task.title}
+                description={task.description}
+                totalMinutes={task.totalMinutes}
+                onClick={() => setSelectedTask(task)}
+              />
+            ))}
+          </SortableContext>
         </div>
 
         {/* Add task */}
@@ -146,9 +165,7 @@ export function ListColumn({ listId, boardId, title, tasks }: ListColumnProps) {
       {selectedTask && (
         <TaskDetailModal
           open={!!selectedTask}
-          onOpenChange={(open) => {
-            if (!open) setSelectedTask(null);
-          }}
+          onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
           task={selectedTask}
           boardId={boardId}
         />

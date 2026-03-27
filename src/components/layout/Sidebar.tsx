@@ -25,7 +25,7 @@ export function Sidebar() {
       <aside className="flex h-full w-60 flex-col bg-sidebar text-sidebar-foreground">
         {/* Logo */}
         <div className="flex h-14 items-center gap-3 px-4 border-b border-sidebar-border">
-          <div className="h-8 w-8 shrink-0 rounded bg-sidebar-accent" />
+          <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
           <span className="text-lg font-semibold text-sidebar-foreground">Learning</span>
         </div>
 
@@ -69,14 +69,10 @@ export function Sidebar() {
                       : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
                   )}
                 >
-                  {board.type === 'TIME_ONLY' ? (
-                    <Clock size={14} />
-                  ) : (
-                    <span className="text-sm leading-none">
-                      {board.icon ?? '📋'}
-                    </span>
-                  )}
-                  <span className="truncate">{board.name}</span>
+                  <span className="text-sm leading-none">
+                    {board.icon ?? '📋'}
+                  </span>
+                  <span className="truncate text-sidebar-muted-foreground">{board.name}</span>
                 </Link>
               ))
             ) : (
