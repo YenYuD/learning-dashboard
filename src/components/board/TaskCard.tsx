@@ -11,6 +11,7 @@ interface TaskCardProps {
   description?: string;
   totalMinutes?: number;
   isTimerRunning?: boolean;
+  onClick?: () => void;
 }
 
 function formatMinutes(minutes: number): string {
@@ -27,6 +28,7 @@ export function TaskCard({
   description,
   totalMinutes = 0,
   isTimerRunning = false,
+  onClick,
 }: TaskCardProps) {
   return (
     <Card
@@ -34,6 +36,7 @@ export function TaskCard({
         'cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group',
         isTimerRunning && 'ring-2 ring-primary',
       )}
+      onClick={onClick}
     >
       <CardContent className="p-3">
         <p className="text-sm font-medium leading-snug">{title}</p>
@@ -54,6 +57,10 @@ export function TaskCard({
               'h-7 gap-1 px-2 text-xs transition-opacity',
               isTimerRunning ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
             )}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Timer functionality - future implementation
+            }}
           >
             <Play size={10} />
             {isTimerRunning ? 'Running' : 'Start timer'}
