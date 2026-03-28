@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -163,7 +162,7 @@ export function BoardSettingsModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="flex items-center justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
@@ -173,7 +172,7 @@ export function BoardSettingsModal({
           >
             {updateBoard.isPending ? '儲存中...' : '儲存'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

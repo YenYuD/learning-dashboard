@@ -2,13 +2,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogClose,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -38,13 +37,6 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
     createList.mutate({ boardId, name: trimmed });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) setName('');
     onOpenChange(isOpen);
@@ -52,17 +44,15 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[480px] p-0 gap-0">
+      <DialogContent className="max-w-[480px] p-0 gap-0" showCloseButton={false}>
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between px-6 h-16 space-y-0">
           <DialogTitle className="text-lg font-semibold">新增清單</DialogTitle>
-          <button
-            type="button"
-            onClick={() => handleOpenChange(false)}
+          <DialogClose
             className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted hover:bg-muted/80"
           >
-            <X size={16} className="text-muted-foreground" />
-          </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </DialogClose>
         </DialogHeader>
 
         <div className="h-px bg-border" />
@@ -77,7 +67,6 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
               placeholder="例如：To Do、In Progress..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={handleKeyDown}
               disabled={createList.isPending}
               autoFocus
             />
@@ -86,7 +75,7 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-6 h-[68px] border-t-0">
+        <div className="flex items-center justify-end gap-3 px-6 pb-6">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -101,7 +90,7 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
           >
             {createList.isPending ? '建立中...' : '建立清單'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

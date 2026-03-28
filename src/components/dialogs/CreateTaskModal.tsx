@@ -2,13 +2,13 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogClose,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -58,13 +58,6 @@ export function CreateTaskModal({
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setTitle('');
@@ -77,17 +70,15 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[520px] p-0 gap-0">
+      <DialogContent className="max-w-[520px] p-0 gap-0" showCloseButton={false}>
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between px-6 h-16 space-y-0">
           <DialogTitle className="text-lg font-semibold">新增任務</DialogTitle>
-          <button
-            type="button"
-            onClick={() => handleOpenChange(false)}
+          <DialogClose
             className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted hover:bg-muted/80"
           >
-            <X size={16} className="text-muted-foreground" />
-          </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </DialogClose>
         </DialogHeader>
 
         <div className="h-px bg-border" />
@@ -103,7 +94,6 @@ export function CreateTaskModal({
               placeholder="例如：複習 N2 單字 Unit 5"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
               disabled={createTask.isPending}
               autoFocus
             />
@@ -154,7 +144,7 @@ export function CreateTaskModal({
         <div className="h-px bg-border" />
 
         {/* Footer */}
-        <DialogFooter className="px-6 h-[68px] border-t-0">
+        <div className="flex items-center justify-end gap-3 px-6 h-[68px]">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
@@ -169,7 +159,7 @@ export function CreateTaskModal({
           >
             {createTask.isPending ? '建立中...' : '建立任務'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
