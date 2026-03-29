@@ -18,27 +18,34 @@ const CHART_COLORS = [
 ];
 
 export const analyticsRouter = router({
-  /** Dashboard summary: today / week / month totals with trend vs previous period */
+  /** Dashboard summary: today / week / month / year totals + streak */
   summary: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(z.object({
+      userId: z.string(),
+      // Client passes its local date as "YYYY-MM-DD" so server-side date
+      // boundaries match the user's timezone rather than server UTC.
+      todayDate: z.string(),
+    }))
     .query(async ({ input }) => {
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Anchor all calculations to the client's local midnight (treated as UTC midnight)
+      const todayStart = new Date(input.todayDate + 'T00:00:00.000Z');
+      const y = todayStart.getUTCFullYear();
+      const m = todayStart.getUTCMonth();
 
       // Monday of current week
       const weekStart = new Date(todayStart);
-      weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+      weekStart.setUTCDate(weekStart.getUTCDate() - ((weekStart.getUTCDay() + 6) % 7));
 
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStart = new Date(Date.UTC(y, m, 1));
+      const yearStart  = new Date(Date.UTC(y, 0, 1));
 
-      // Previous periods
       const yesterdayStart = new Date(todayStart);
-      yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+      yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
 
       const lastWeekStart = new Date(weekStart);
-      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
 
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthStart = new Date(Date.UTC(y, m - 1, 1));
 
       const userFilter = { board: { user_id: input.userId } };
 
@@ -49,7 +56,8 @@ export const analyticsRouter = router({
         lastWeekAgg,
         monthAgg,
         lastMonthAgg,
-        boardCount,
+        yearAgg,
+        streakEntries,
       ] = await prisma.$transaction([
         prisma.timeEntry.aggregate({
           where: { ...userFilter, createdAt: { gte: todayStart } },
@@ -75,23 +83,41 @@ export const analyticsRouter = router({
           where: { ...userFilter, createdAt: { gte: lastMonthStart, lt: monthStart } },
           _sum: { duration: true },
         }),
-        prisma.board.count({ where: { user_id: input.userId } }),
+        prisma.timeEntry.aggregate({
+          where: { ...userFilter, createdAt: { gte: yearStart } },
+          _sum: { duration: true },
+        }),
+        // Fetch all entry dates for streak calculation (select only createdAt)
+        prisma.timeEntry.findMany({
+          where: userFilter,
+          select: { createdAt: true },
+        }),
       ]);
 
+      // Build a Set of UTC date keys "YYYY-M-D" for O(1) lookup
+      const dateSet = new Set(
+        streakEntries.map((e) => {
+          const d = new Date(e.createdAt);
+          return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+        }),
+      );
+
+      // Count consecutive days backwards from today
+      let streak = 0;
+      const cursor = new Date(todayStart);
+      while (true) {
+        const key = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
+        if (!dateSet.has(key)) break;
+        streak++;
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+      }
+
       return {
-        today: {
-          minutes: todayAgg._sum.duration ?? 0,
-          prevMinutes: yesterdayAgg._sum.duration ?? 0,
-        },
-        week: {
-          minutes: weekAgg._sum.duration ?? 0,
-          prevMinutes: lastWeekAgg._sum.duration ?? 0,
-        },
-        month: {
-          minutes: monthAgg._sum.duration ?? 0,
-          prevMinutes: lastMonthAgg._sum.duration ?? 0,
-        },
-        boardCount,
+        today:  { minutes: todayAgg._sum.duration  ?? 0, prevMinutes: yesterdayAgg._sum.duration ?? 0 },
+        week:   { minutes: weekAgg._sum.duration   ?? 0, prevMinutes: lastWeekAgg._sum.duration  ?? 0 },
+        month:  { minutes: monthAgg._sum.duration  ?? 0, prevMinutes: lastMonthAgg._sum.duration ?? 0 },
+        year:   { minutes: yearAgg._sum.duration   ?? 0 },
+        streak,
       };
     }),
 
@@ -201,6 +227,34 @@ export const analyticsRouter = router({
           color: board?.color ?? CHART_COLORS[i % CHART_COLORS.length],
         };
       });
+    }),
+
+  /** Monthly calendar – total minutes per day for a given year/month */
+  monthlyCalendar: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      year:  z.number(),
+      month: z.number(), // 1-12, from client's local date
+    }))
+    .query(async ({ input }) => {
+      const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
+      const monthEnd   = new Date(Date.UTC(input.year, input.month,     1)); // exclusive
+
+      const entries = await prisma.timeEntry.findMany({
+        where: {
+          board: { user_id: input.userId },
+          createdAt: { gte: monthStart, lt: monthEnd },
+        },
+        select: { duration: true, createdAt: true },
+      });
+
+      const buckets = new Map<number, number>();
+      for (const entry of entries) {
+        const day = new Date(entry.createdAt).getUTCDate();
+        buckets.set(day, (buckets.get(day) ?? 0) + entry.duration);
+      }
+
+      return Array.from(buckets.entries()).map(([day, minutes]) => ({ day, minutes }));
     }),
 
   /** Daily trend – hours per day for the last N days */
