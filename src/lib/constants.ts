@@ -3,35 +3,41 @@
 /** MVP 階段無認證，使用固定 demo user ID */
 export const MOCK_USER_ID = 'user-demo';
 
-/** Board 可選顏色（淺色、中色、深色三排） */
+/**
+ * Board 可選顏色（5×5，按色相環排列，飽和度壓在 35-50% 的復古陶瓷風）
+ * 所有顏色視覺重量相近，在圖表中任意搭配都柔和協調。
+ */
 export const BOARD_COLORS = [
-  // 淺色
-  { value: '#EFF6FF', label: '淺藍' },
-  { value: '#F0FDF4', label: '淺綠' },
-  { value: '#FEF3C7', label: '淺黃' },
-  { value: '#FCE7F3', label: '淺粉' },
-  { value: '#F3E8FF', label: '淺紫' },
-  { value: '#FEE2E2', label: '淺紅' },
-  { value: '#E0F2FE', label: '淺青' },
-  { value: '#FEF9C3', label: '淺檸檬' },
-  // 中色
-  { value: '#93C5FD', label: '中藍' },
-  { value: '#6EE7B7', label: '中綠' },
-  { value: '#FCD34D', label: '中黃' },
-  { value: '#F9A8D4', label: '中粉' },
-  { value: '#C4B5FD', label: '中紫' },
-  { value: '#FCA5A5', label: '中紅' },
-  { value: '#67E8F9', label: '中青' },
-  { value: '#86EFAC', label: '中草綠' },
-  // 深色
-  { value: '#2563EB', label: '深藍' },
-  { value: '#059669', label: '深綠' },
-  { value: '#D97706', label: '深橙' },
-  { value: '#DB2777', label: '深粉' },
-  { value: '#7C3AED', label: '深紫' },
-  { value: '#DC2626', label: '深紅' },
-  { value: '#0891B2', label: '深青' },
-  { value: '#65A30D', label: '深草綠' },
+  // 藍系
+  { value: '#5AAED4', label: '天藍' },
+  { value: '#6A9CC8', label: '鴿藍' },
+  { value: '#5EC4CC', label: '水青' },
+  { value: '#4AB8B8', label: '青' },
+  { value: '#5BB8A4', label: '碧玉' },
+  // 綠系
+  { value: '#5BAD8A', label: '翠綠' },
+  { value: '#6EC87A', label: '草綠' },
+  { value: '#8CC86A', label: '葉綠' },
+  { value: '#AACB58', label: '嫩綠' },
+  { value: '#C8C454', label: '橄欖' },
+  // 暖黃橙系
+  { value: '#D4A84C', label: '蜂蜜' },
+  { value: '#D4904E', label: '琥珀' },
+  { value: '#D08456', label: '橙' },
+  { value: '#CC7860', label: '磚橙' },
+  { value: '#C87474', label: '珊瑚' },
+  // 粉紅紫系
+  { value: '#C27492', label: '覆盆子' },
+  { value: '#BC7CAC', label: '玫瑰' },
+  { value: '#B880C4', label: '蘭花' },
+  { value: '#9884CC', label: '薰衣草' },
+  { value: '#8888CC', label: '長春花' },
+  // 靛藍系
+  { value: '#8496CC', label: '矢車菊' },
+  { value: '#7C90D0', label: '岩藍' },
+  { value: '#7884CC', label: '靛紫' },
+  { value: '#7272CC', label: '深靛' },
+  { value: '#8484D4', label: '藍紫' },
 ] as const;
 
 /** Board 模板定義 */

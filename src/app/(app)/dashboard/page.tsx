@@ -8,6 +8,7 @@ import { WeeklyBarChart } from '~/components/dashboard/WeeklyBarChart';
 import { BoardDonutChart } from '~/components/dashboard/BoardDonutChart';
 import { DailyTrendChart } from '~/components/dashboard/DailyTrendChart';
 import { MonthlyCalendar } from '~/components/dashboard/MonthlyCalendar';
+import { MonthlyBoardBreakdown } from '~/components/dashboard/MonthlyBoardBreakdown';
 
 export type TimeRange = 'today' | 'week' | 'month' | 'year';
 
@@ -26,8 +27,9 @@ export default function DashboardPage() {
         <BoardDonutChart timeRange={timeRange} />
         <DailyTrendChart timeRange={timeRange} />
       </div>
-      <div className='lg:w-1/2 w-full'>
+      <div className="grid gap-4 lg:grid-cols-2">
         <MonthlyCalendar />
+        <MonthlyBoardBreakdown />
       </div>
     </div>
   );

@@ -17,7 +17,8 @@ import { trpc } from '~/utils/trpc';
 import { MOCK_USER_ID } from '~/lib/constants';
 import type { TimeRange } from '~/app/(app)/dashboard/page';
 
-const CHART_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+// 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
+const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
 
 const TITLES: Record<TimeRange, string> = {
   today: '今日時間分佈',
