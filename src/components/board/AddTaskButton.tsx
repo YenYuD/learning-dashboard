@@ -22,15 +22,14 @@ export function AddTaskButton({ listId, boardId, lists }: AddTaskButtonProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+      <button
+        type="button"
+        className="flex w-full items-center gap-2 rounded-md p-3 text-[13px] text-[#7A7A7A] hover:bg-muted/50 transition-colors"
         onClick={() => setOpen(true)}
       >
         <Plus size={14} />
         Add task
-      </Button>
+      </button>
       <CreateTaskModal
         open={open}
         onOpenChange={setOpen}

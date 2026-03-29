@@ -2,13 +2,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -70,15 +69,17 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[520px] p-0 gap-0" showCloseButton={false}>
+      <DialogContent className="sm:max-w-[520px] p-0 gap-0" showCloseButton={false}>
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between px-6 h-16 space-y-0">
           <DialogTitle className="text-lg font-semibold">新增任務</DialogTitle>
-          <DialogClose
+          <button
+            type="button"
+            onClick={() => handleOpenChange(false)}
             className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted hover:bg-muted/80"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </DialogClose>
+            <X size={16} className="text-muted-foreground" />
+          </button>
         </DialogHeader>
 
         <div className="h-px bg-border" />

@@ -112,6 +112,14 @@ export const boardRouter = router({
         },
       });
 
+      const defaultLists = input.type === 'TASK_BASED'
+        ? [
+            { name: 'To-do', order: 0 },
+            { name: 'In Progress', order: 1 },
+            { name: 'Complete', order: 2 },
+          ]
+        : [];
+
       return await prisma.board.create({
         data: {
           name: input.name,
@@ -120,6 +128,9 @@ export const boardRouter = router({
           icon: input.icon,
           color: input.color,
           order: (maxOrder?.order ?? -1) + 1,
+          lists: {
+            create: defaultLists,
+          },
         },
       });
     }),

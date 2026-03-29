@@ -3,7 +3,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus, Clock } from 'lucide-react';
+import { LayoutDashboard, Plus } from 'lucide-react';
+import { BoardIcon } from '~/components/ui/board-icon';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -58,23 +59,30 @@ export function Sidebar() {
                 <Skeleton className="h-8 w-full bg-sidebar-muted" />
               </div>
             ) : boards && boards.length > 0 ? (
-              boards.map((board) => (
-                <Link
-                  key={board.id}
-                  href={`/board/${board.id}`}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative',
-                    pathname === `/board/${board.id}`
-                      ? 'text-sidebar-accent-foreground font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:rounded-full before:bg-sidebar-accent'
-                      : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
-                  )}
-                >
-                  <span className="text-sm leading-none">
-                    {board.icon ?? '📋'}
-                  </span>
-                  <span className="truncate text-sidebar-muted-foreground">{board.name}</span>
-                </Link>
-              ))
+              boards.map((board) => {
+                const isActive = pathname === `/board/${board.id}`;
+                return (
+                  <Link
+                    key={board.id}
+                    href={`/board/${board.id}`}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative',
+                      isActive
+                        ? 'text-sidebar-foreground font-medium'
+                        : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
+                    )}
+                  >
+                    {isActive && (
+                      <span
+                        className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
+                        style={{ backgroundColor: board.color ?? 'hsl(var(--sidebar-accent))' }}
+                      />
+                    )}
+                    <BoardIcon icon={board.icon} size={16} />
+                    <span className="truncate">{board.name}</span>
+                  </Link>
+                );
+              })
             ) : (
               <p className="px-3 text-xs text-sidebar-muted-foreground">
                 No boards yet

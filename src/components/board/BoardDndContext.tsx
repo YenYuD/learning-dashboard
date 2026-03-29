@@ -198,7 +198,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-full gap-3 p-4">
+        <div className="flex items-start gap-3 p-4">
           <SortableContext items={listIds} strategy={horizontalListSortingStrategy}>
             {lists.map((list) => (
               <SortableListColumn
@@ -218,6 +218,8 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
           {activeTask ? (
             <div className="w-72 opacity-80">
               <TaskCard
+                taskId={activeTask.id}
+                boardId={boardId}
                 title={activeTask.title}
                 description={activeTask.description}
                 totalMinutes={activeTask.totalMinutes}

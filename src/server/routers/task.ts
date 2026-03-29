@@ -3,6 +3,18 @@ import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 
 export const taskRouter = router({
+  byId: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) => {
+      return prisma.task.findUniqueOrThrow({
+        where: { id: input.id },
+        include: {
+          list: { select: { boardId: true } },
+          timeEntries: true,
+        },
+      });
+    }),
+
   create: publicProcedure
     .input(z.object({
       listId: z.string(),

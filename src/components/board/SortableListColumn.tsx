@@ -105,9 +105,9 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
 
   return (
     <>
-      <div ref={setNodeRef} style={style} className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60">
+      <div ref={setNodeRef} style={style} className="relative flex w-[280px] shrink-0 flex-col rounded-lg bg-white border border-[#E8E8E8] p-5 gap-4 max-h-[70vh]">
         {/* List header - draggable */}
-        <div className="flex items-center justify-between px-3 py-2.5 cursor-grab" {...attributes} {...listeners}>
+        <div className="flex items-center justify-between cursor-grab" {...attributes} {...listeners}>
           {isRenaming ? (
             <Input
               ref={renameRef}
@@ -115,20 +115,20 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
               onChange={(e) => setRenameValue(e.target.value)}
               onKeyDown={handleRenameKeyDown}
               onBlur={handleRenameSubmit}
-              className="h-7 text-sm font-semibold"
+              className="h-7 text-base font-semibold"
               disabled={updateList.isPending}
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             />
           ) : (
-            <h3 className="text-sm font-semibold">{title}</h3>
+            <h3 className="text-base font-semibold text-[#0D0D0D]">{title}</h3>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
               className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent hover:text-accent-foreground"
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal size={14} />
+              <MoreHorizontal size={16} className="text-[#9CA3AF]" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { setRenameValue(title); setIsRenaming(true); }}>
@@ -147,12 +147,13 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
         </div>
 
         {/* Task cards - droppable area */}
-        <div ref={setDropRef} className="flex flex-col gap-2 px-2 pb-2 min-h-[60px]">
+        <div ref={setDropRef} className="flex flex-col gap-4 min-h-[10px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
             {tasks.map((task) => (
               <SortableTaskCard
                 key={task.id}
                 id={task.id}
+                boardId={boardId}
                 title={task.title}
                 description={task.description}
                 totalMinutes={task.totalMinutes}
@@ -163,9 +164,7 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
         </div>
 
         {/* Add task */}
-        <div className="px-2 pb-2">
-          <AddTaskButton listId={listId} boardId={boardId} lists={allLists} />
-        </div>
+        <AddTaskButton listId={listId} boardId={boardId} lists={allLists} />
       </div>
 
       {selectedTask && (

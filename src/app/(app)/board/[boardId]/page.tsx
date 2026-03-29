@@ -69,6 +69,7 @@ export default function BoardPage({
           boardId={board.id}
           icon={board.icon ?? undefined}
           name={board.name}
+          color={board.color ?? undefined}
           onSettingsClick={() => setSettingsOpen(true)}
         />
         <TimeOnlyBoard boardId={board.id} boardName={board.name} />
@@ -90,6 +91,7 @@ export default function BoardPage({
         boardId={board.id}
         icon={board.icon ?? undefined}
         name={board.name}
+        color={board.color ?? undefined}
         onSettingsClick={() => setSettingsOpen(true)}
       />
 

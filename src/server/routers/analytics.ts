@@ -108,7 +108,7 @@ export const analyticsRouter = router({
           board: { user_id: input.userId },
           createdAt: { gte: weekStart },
         },
-        include: { board: { select: { name: true } } },
+        include: { board: { select: { name: true, color: true } } },
       });
 
       const days = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
@@ -122,8 +122,12 @@ export const analyticsRouter = router({
       }
 
       const boardNames = [...new Set(entries.map((e) => e.board.name))];
+      const boardColors: Record<string, string | null> = {};
+      for (const entry of entries) {
+        boardColors[entry.board.name] = entry.board.color;
+      }
 
-      return { data: result, boardNames };
+      return { data: result, boardNames, boardColors };
     }),
 
   /** Donut chart – time distribution by board */
@@ -164,7 +168,7 @@ export const analyticsRouter = router({
             totalMinutes > 0
               ? Math.round(((e._sum.duration ?? 0) / totalMinutes) * 100)
               : 0,
-          color: CHART_COLORS[i % CHART_COLORS.length],
+          color: board?.color ?? CHART_COLORS[i % CHART_COLORS.length],
         };
       });
     }),

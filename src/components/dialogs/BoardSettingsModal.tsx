@@ -11,6 +11,7 @@ import {
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
 import { BOARD_COLORS, MOCK_USER_ID } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
@@ -110,12 +111,9 @@ export function BoardSettingsModal({
             <label className="text-xs text-muted-foreground mb-1.5 block">
               Icon
             </label>
-            <Input
+            <IconPicker
               value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              placeholder="📚"
-              className="text-center text-lg w-16"
-              maxLength={2}
+              onChange={(name) => setIcon(name)}
             />
           </div>
 
@@ -145,7 +143,6 @@ export function BoardSettingsModal({
 
           {/* Danger zone */}
           <div className="pt-2 border-t">
-            <p className="text-xs text-muted-foreground mb-2">危險操作</p>
             <Button
               variant="destructive"
               size="sm"

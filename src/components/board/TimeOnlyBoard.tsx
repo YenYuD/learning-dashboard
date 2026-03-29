@@ -317,14 +317,14 @@ export function TimeOnlyBoard({ boardId, boardName }: TimeOnlyBoardProps) {
                 <span className="text-muted-foreground">
                   {new Date(entry.createdAt).toLocaleDateString()}
                 </span>
-                {entry.note && (
-                  <span className="text-muted-foreground">{entry.note}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
                   {formatDuration(entry.duration)}
                 </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {entry.note && (
+                  <span className="text-muted-foreground">{entry.note}</span>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

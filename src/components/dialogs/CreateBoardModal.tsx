@@ -12,24 +12,36 @@ import {
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
-import { BOARD_COLORS, BOARD_TEMPLATES, MOCK_USER_ID } from '~/lib/constants';
+import { BOARD_COLORS, MOCK_USER_ID } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
+import { ListChecks, Timer } from 'lucide-react';
+
+type BoardType = 'TASK_BASED' | 'TIME_ONLY';
+
+const BOARD_TYPES: { type: BoardType; label: string; icon: React.ReactNode; description: string }[] = [
+  {
+    type: 'TASK_BASED',
+    label: '任務型',
+    icon: <ListChecks size={22} />,
+    description: '建立任務清單，逐步完成學習目標。適合有明確步驟的學習，例如讀書計畫、程式課題。',
+  },
+  {
+    type: 'TIME_ONLY',
+    label: '計時型',
+    icon: <Timer size={22} />,
+    description: '單純記錄投入的時間，不需要任務列表。適合難以拆解成任務的練習，例如滑雪、樂器。',
+  },
+];
 
 interface CreateBoardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-type TemplateId = (typeof BOARD_TEMPLATES)[number]['id'];
-
-// 設計稿顯示的 4 個模板（2×2 grid）
-const DISPLAY_TEMPLATES = BOARD_TEMPLATES.filter((t) =>
-  ['language', 'programming', 'sport', 'fitness'].includes(t.id),
-);
-
 export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('language');
+  const [boardType, setBoardType] = useState<BoardType>('TASK_BASED');
   const [boardName, setBoardName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string>(BOARD_COLORS[0].value);
   const [boardIcon, setBoardIcon] = useState('');
@@ -71,24 +83,20 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
       utils.board.list.invalidate({ userId: MOCK_USER_ID });
       onOpenChange(false);
       setBoardName('');
-      setSelectedTemplate('language');
+      setBoardType('TASK_BASED');
       setSelectedColor(BOARD_COLORS[0].value);
       setBoardIcon('');
       router.push(`/board/${newBoard.id}`);
     },
   });
 
-  const selectedTemplateData = BOARD_TEMPLATES.find(
-    (t) => t.id === selectedTemplate,
-  );
-
   const handleCreate = () => {
     if (!boardName.trim()) return;
     createBoard.mutate({
       name: boardName.trim(),
-      type: selectedTemplateData?.type ?? 'TASK_BASED',
+      type: boardType,
       userId: MOCK_USER_ID,
-      icon: boardIcon || selectedTemplateData?.icon,
+      icon: boardIcon || undefined,
       color: selectedColor,
     });
   };
@@ -101,24 +109,30 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Template selection — 2×2 grid */}
+          {/* Board type selection */}
           <div>
-            <p className="text-sm font-medium mb-3">選擇模板</p>
-            <div className="grid grid-cols-2 gap-2">
-              {DISPLAY_TEMPLATES.map((template) => (
+            <p className="text-sm font-medium mb-3">選擇類型</p>
+            <div className="grid grid-cols-2 gap-3">
+              {BOARD_TYPES.map(({ type, label, icon, description }) => (
                 <button
-                  key={template.id}
+                  key={type}
                   type="button"
-                  onClick={() => setSelectedTemplate(template.id)}
+                  onClick={() => setBoardType(type)}
                   className={cn(
-                    'flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center text-sm transition-colors',
-                    selectedTemplate === template.id
+                    'flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-colors',
+                    boardType === type
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-muted-foreground/40',
                   )}
                 >
-                  <span className="text-2xl">{template.icon}</span>
-                  <span className="font-medium text-xs">{template.label}</span>
+                  <div className={cn(
+                    'flex items-center gap-2 font-medium text-sm',
+                    boardType === type ? 'text-primary' : 'text-foreground',
+                  )}>
+                    {icon}
+                    {label}
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
                 </button>
               ))}
             </div>
@@ -133,7 +147,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
                 名稱
               </label>
               <Input
-                placeholder={`例：${selectedTemplateData?.label ?? '我的 Board'}`}
+                placeholder="例：日文 N2 備考"
                 value={boardName}
                 onChange={(e) => setBoardName(e.target.value)}
               />
@@ -145,12 +159,9 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
                 <label className="text-xs text-muted-foreground mb-1.5 block">
                   Icon
                 </label>
-                <Input
-                  placeholder={selectedTemplateData?.icon ?? '🎯'}
+                <IconPicker
                   value={boardIcon}
-                  onChange={(e) => setBoardIcon(e.target.value)}
-                  className="text-center text-lg"
-                  maxLength={2}
+                  onChange={(name) => setBoardIcon(name)}
                 />
               </div>
 
