@@ -6,16 +6,8 @@ import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 
-const CHART_COLORS = [
-  '#EF4444',
-  '#3B82F6',
-  '#10B981',
-  '#F59E0B',
-  '#8B5CF6',
-  '#EC4899',
-  '#06B6D4',
-  '#84CC16',
-];
+// 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
+const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
 
 export const analyticsRouter = router({
   /** Dashboard summary: today / week / month / year totals + streak */
@@ -255,6 +247,42 @@ export const analyticsRouter = router({
       }
 
       return Array.from(buckets.entries()).map(([day, minutes]) => ({ day, minutes }));
+    }),
+
+  /** Monthly board breakdown – total minutes per board for current month */
+  monthlyBoardBreakdown: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      year:   z.number(),
+      month:  z.number(), // 1-12
+    }))
+    .query(async ({ input }) => {
+      const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
+      const monthEnd   = new Date(Date.UTC(input.year, input.month,     1));
+
+      const entries = await prisma.timeEntry.groupBy({
+        by: ['boardId'],
+        where: {
+          board: { user_id: input.userId },
+          createdAt: { gte: monthStart, lt: monthEnd },
+        },
+        _sum: { duration: true },
+      });
+
+      const boards = await prisma.board.findMany({
+        where: { id: { in: entries.map((e) => e.boardId) } },
+        select: { id: true, name: true, color: true },
+      });
+
+      const boardMap = new Map(boards.map((b) => [b.id, { name: b.name, color: b.color }]));
+
+      return entries
+        .map((e) => ({
+          name: boardMap.get(e.boardId)?.name ?? 'Unknown',
+          color: boardMap.get(e.boardId)?.color ?? null,
+          minutes: e._sum.duration ?? 0,
+        }))
+        .sort((a, b) => b.minutes - a.minutes);
     }),
 
   /** Daily trend – hours per day for the last N days */

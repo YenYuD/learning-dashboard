@@ -44,6 +44,9 @@ export function BoardSettingsModal({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: board.id });
       utils.board.list.invalidate({ userId: MOCK_USER_ID });
+      // Board color/name changes affect all analytics charts — invalidate them too
+      utils.analytics.weeklyByBoard.invalidate({ userId: MOCK_USER_ID });
+      utils.analytics.boardDistribution.invalidate({ userId: MOCK_USER_ID });
       onOpenChange(false);
     },
   });
