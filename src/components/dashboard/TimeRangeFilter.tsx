@@ -9,27 +9,35 @@ interface TimeRangeFilterProps {
   onChange: (value: TimeRange) => void;
 }
 
+const baseClasses = 'data-[active]:!bg-primary data-[active]:!text-primary-foreground py-2 px-3 rounded-none';
+
 export function TimeRangeFilter({ value, onChange }: TimeRangeFilterProps) {
   return (
     <Tabs value={value} onValueChange={(v) => onChange(v as TimeRange)}>
       <TabsList className="bg-secondary p-1 gap-1">
         <TabsTrigger
           value="today"
-          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+          className={baseClasses}
         >
           今天
         </TabsTrigger>
         <TabsTrigger
           value="week"
-          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+          className={baseClasses}
         >
           本週
         </TabsTrigger>
         <TabsTrigger
           value="month"
-          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=inactive]:text-muted-foreground"
+          className={baseClasses}
         >
           本月
+        </TabsTrigger>
+        <TabsTrigger
+          value="year"
+          className={baseClasses}
+        >
+          本年
         </TabsTrigger>
       </TabsList>
     </Tabs>

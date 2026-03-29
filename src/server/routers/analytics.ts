@@ -95,30 +95,60 @@ export const analyticsRouter = router({
       };
     }),
 
-  /** Weekly bar chart – time per board per day of the current week */
+  /** Weekly bar chart – time per board per day/week, filtered by timeRange */
   weeklyByBoard: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(
+      z.object({
+        userId: z.string(),
+        timeRange: z.enum(['today', 'week', 'month', 'year']).default('week'),
+      }),
+    )
     .query(async ({ input }) => {
       const now = new Date();
-      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      let startDate: Date;
+      let labels: string[];
+      let getDayIndex: (date: Date) => number;
+
+      if (input.timeRange === 'today') {
+        startDate = today;
+        labels = ['今天'];
+        getDayIndex = () => 0;
+      } else if (input.timeRange === 'week') {
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+        labels = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+        getDayIndex = (date: Date) => (date.getDay() + 6) % 7;
+      } else if (input.timeRange === 'month') {
+        // month – group by week within the month
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        labels = ['第1週', '第2週', '第3週', '第4週', '第5週'];
+        getDayIndex = (date: Date) => Math.min(Math.floor((date.getDate() - 1) / 7), 4);
+      } else {
+        // year – group by month
+        startDate = new Date(now.getFullYear(), 0, 1);
+        labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        getDayIndex = (date: Date) => date.getMonth();
+      }
 
       const entries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: input.userId },
-          createdAt: { gte: weekStart },
+          createdAt: { gte: startDate },
         },
         include: { board: { select: { name: true, color: true } } },
       });
 
-      const days = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-      const result = days.map((day) => ({ day }) as Record<string, string | number>);
+      const result = labels.map((day) => ({ day }) as Record<string, string | number>);
 
       for (const entry of entries) {
-        const dayIndex = (new Date(entry.createdAt).getDay() + 6) % 7;
-        const boardName = entry.board.name;
-        const current = (result[dayIndex][boardName] as number) || 0;
-        result[dayIndex][boardName] = +(current + entry.duration / 60).toFixed(1);
+        const index = getDayIndex(new Date(entry.createdAt));
+        if (index >= 0 && index < labels.length) {
+          const boardName = entry.board.name;
+          const current = (result[index][boardName] as number) || 0;
+          result[index][boardName] = +(current + entry.duration / 60).toFixed(1);
+        }
       }
 
       const boardNames = [...new Set(entries.map((e) => e.board.name))];

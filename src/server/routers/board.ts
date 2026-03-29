@@ -62,7 +62,8 @@ export const boardRouter = router({
             include: {
               tasks: {
                 include: {
-                  timeEntries: true,
+                  // board 頁面只需要 duration 來算 totalMinutes，不撈其他欄位
+                  timeEntries: { select: { duration: true } },
                 },
                 orderBy: {
                   order: 'asc',

@@ -14,18 +14,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
 import { MOCK_USER_ID } from '~/lib/constants';
+import type { TimeRange } from '~/app/(app)/dashboard/page';
 
-export function DailyTrendChart() {
+const DAYS_MAP: Record<TimeRange, number> = { today: 1, week: 7, month: 30, year: 365 };
+const TITLES: Record<TimeRange, string> = {
+  today: '今日趨勢',
+  week: '每日趨勢（近7天）',
+  month: '每日趨勢（近30天）',
+  year: '每日趨勢（近365天）',
+};
+const EMPTY_MESSAGES: Record<TimeRange, string> = {
+  today: '今日尚無學習記錄',
+  week: '近七天尚無學習記錄',
+  month: '近三十天尚無學習記錄',
+  year: '本年尚無學習記錄',
+};
+
+interface DailyTrendChartProps {
+  timeRange: TimeRange;
+}
+
+export function DailyTrendChart({ timeRange }: DailyTrendChartProps) {
   const { data, isLoading } = trpc.analytics.dailyTrend.useQuery({
     userId: MOCK_USER_ID,
-    days: 7,
+    days: DAYS_MAP[timeRange],
   });
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">每日趨勢</CardTitle>
+          <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[220px] w-full" />
@@ -39,12 +58,12 @@ export function DailyTrendChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">每日趨勢</CardTitle>
+        <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
       </CardHeader>
       <CardContent>
         {chartData.every((d) => d.hours === 0) ? (
           <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
-            近七天尚無學習記錄
+            {EMPTY_MESSAGES[timeRange]}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>

@@ -15,19 +15,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
 import { MOCK_USER_ID } from '~/lib/constants';
+import type { TimeRange } from '~/app/(app)/dashboard/page';
 
 const CHART_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
 
-export function WeeklyBarChart() {
+const TITLES: Record<TimeRange, string> = {
+  today: '今日時間分佈',
+  week: '本週時間分佈',
+  month: '本月時間分佈',
+  year: '本年時間分佈',
+};
+
+const EMPTY_MESSAGES: Record<TimeRange, string> = {
+  today: '今日尚無學習記錄',
+  week: '本週尚無學習記錄',
+  month: '本月尚無學習記錄',
+  year: '本年尚無學習記錄',
+};
+
+interface WeeklyBarChartProps {
+  timeRange: TimeRange;
+}
+
+export function WeeklyBarChart({ timeRange }: WeeklyBarChartProps) {
   const { data, isLoading } = trpc.analytics.weeklyByBoard.useQuery({
     userId: MOCK_USER_ID,
+    timeRange,
   });
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">本週時間分佈</CardTitle>
+          <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[220px] w-full" />
@@ -43,12 +63,12 @@ export function WeeklyBarChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">本週時間分佈</CardTitle>
+        <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
       </CardHeader>
       <CardContent>
         {boardNames.length === 0 ? (
           <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
-            本週尚無學習記錄
+            {EMPTY_MESSAGES[timeRange]}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>

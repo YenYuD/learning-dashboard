@@ -18,7 +18,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 1000,
+            // 所有寫入都會 invalidate，所以可以讓 cache 保鮮更久
+            // 5 分鐘內重訪同一頁面直接用 cache，不發請求
+            staleTime: 5 * 60 * 1000,
+            // 離開頁面後 cache 在記憶體中保留 10 分鐘
+            gcTime: 10 * 60 * 1000,
           },
         },
       }),
