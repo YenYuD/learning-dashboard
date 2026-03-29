@@ -105,7 +105,7 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
 
   return (
     <>
-      <div ref={setNodeRef} style={style} className="relative flex w-[280px] shrink-0 flex-col rounded-lg bg-white border border-[#E8E8E8] p-5 gap-4 max-h-[70vh]">
+      <div ref={setNodeRef} style={style} className="relative flex w-[320px] shrink-0 flex-col rounded-lg bg-white border border-[#E8E8E8] p-5 gap-4 max-h-[80vh]">
         {/* List header - draggable */}
         <div className="flex items-center justify-between cursor-grab" {...attributes} {...listeners}>
           {isRenaming ? (

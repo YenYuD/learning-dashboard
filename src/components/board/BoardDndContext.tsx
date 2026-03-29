@@ -1,17 +1,21 @@
 // src/components/board/BoardDndContext.tsx
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
   PointerSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -46,21 +50,40 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
   const [lists, setLists] = useState(initialLists);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<'list' | 'task' | null>(null);
+  const isDraggingRef = useRef(false);
+  const isDirtyRef = useRef(false); // true while a mutation is in-flight
+  const lastOverIdRef = useRef<string | null>(null);
 
   const utils = trpc.useUtils();
 
   const listReorder = trpc.list.reorder.useMutation({
-    onSuccess: () => utils.board.byId.invalidate({ id: boardId }),
+    onSuccess: () => {
+      isDirtyRef.current = false;
+      utils.board.byId.invalidate({ id: boardId });
+    },
+    onError: () => {
+      isDirtyRef.current = false;
+      setLists(initialLists);
+    },
   });
 
   const taskReorder = trpc.task.reorder.useMutation({
-    onSuccess: () => utils.board.byId.invalidate({ id: boardId }),
+    onSuccess: () => {
+      isDirtyRef.current = false;
+      utils.board.byId.invalidate({ id: boardId });
+    },
+    onError: () => {
+      isDirtyRef.current = false;
+      setLists(initialLists);
+    },
   });
 
-  // Sync with server data when it changes
-  // We use initialLists as key - when server data changes, reset local state
-  useMemo(() => {
-    setLists(initialLists);
+  // Sync with server data only when not dragging AND no in-flight mutation
+  // This prevents stale refetches from overwriting our optimistic updates
+  useEffect(() => {
+    if (!isDraggingRef.current && !isDirtyRef.current) {
+      setLists(initialLists);
+    }
   }, [initialLists]);
 
   const sensors = useSensors(
@@ -69,10 +92,47 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
 
   const listIds = lists.map((l) => l.id);
 
-  // Find which list a task belongs to
   const findListByTaskId = useCallback((taskId: string) => {
     return lists.find((l) => l.tasks.some((t) => t.id === taskId));
   }, [lists]);
+
+  // Custom collision detection: prioritise pointer-within for kanban cross-column detection
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    // For list dragging, use closestCenter
+    if (activeType === 'list') {
+      return closestCenter(args);
+    }
+
+    // For task dragging: first try pointer-within for accurate column detection
+    const pointerIntersections = pointerWithin(args);
+    const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
+    let overId = getFirstCollision(intersections, 'id');
+
+    if (overId != null) {
+      lastOverIdRef.current = overId as string;
+      // If hovering over a list drop zone, find the closest task within it
+      const overIdStr = overId as string;
+      const targetListId = overIdStr.startsWith('list-drop-')
+        ? overIdStr.replace('list-drop-', '')
+        : listIds.includes(overIdStr) ? overIdStr : null;
+
+      if (targetListId) {
+        const targetList = lists.find((l) => l.id === targetListId);
+        if (targetList && targetList.tasks.length > 0) {
+          const taskContainers = args.droppableContainers.filter((c) =>
+            targetList.tasks.some((t) => t.id === c.id),
+          );
+          if (taskContainers.length > 0) {
+            const closest = closestCenter({ ...args, droppableContainers: taskContainers });
+            if (closest.length > 0) return closest;
+          }
+        }
+        return [{ id: overId }];
+      }
+    }
+
+    return lastOverIdRef.current ? [{ id: lastOverIdRef.current }] : [];
+  }, [activeType, lists, listIds]);
 
   // Get active item for overlay
   const activeTask = activeType === 'task'
@@ -84,6 +144,8 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
     const type = active.data.current?.type as 'list' | 'task';
     setActiveId(active.id as string);
     setActiveType(type);
+    isDraggingRef.current = true;
+    lastOverIdRef.current = null;
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -92,98 +154,102 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
 
     const activeTaskId = active.id as string;
     const overId = over.id as string;
+    if (activeTaskId === overId) return;
 
     const activeList = findListByTaskId(activeTaskId);
     if (!activeList) return;
 
-    // Determine target list
-    let overList: typeof activeList | undefined;
+    // Determine target list and over-task
+    let overList: List | undefined;
+    let overTaskId: string | null = null;
+
     if (overId.startsWith('list-drop-')) {
-      const listId = overId.replace('list-drop-', '');
-      overList = lists.find((l) => l.id === listId);
+      overList = lists.find((l) => l.id === overId.replace('list-drop-', ''));
+    } else if (listIds.includes(overId)) {
+      overList = lists.find((l) => l.id === overId);
     } else {
-      overList = findListByTaskId(overId) ?? lists.find((l) => l.id === overId);
+      overList = findListByTaskId(overId);
+      overTaskId = overId;
     }
 
-    if (!overList || activeList.id === overList.id) return;
+    if (!overList) return;
 
-    // Move task between lists
     setLists((prev) => {
-      const sourceList = prev.find((l) => l.id === activeList.id)!;
-      const destList = prev.find((l) => l.id === overList.id)!;
-      const task = sourceList.tasks.find((t) => t.id === activeTaskId)!;
+      const activeListInPrev = prev.find((l) => l.id === activeList.id)!;
+      const overListInPrev = prev.find((l) => l.id === overList!.id)!;
+      const task = activeListInPrev.tasks.find((t) => t.id === activeTaskId);
+      if (!task) return prev;
 
-      const overIndex = destList.tasks.findIndex((t) => t.id === overId);
-      const insertIndex = overIndex >= 0 ? overIndex : destList.tasks.length;
+      const activeIndex = activeListInPrev.tasks.findIndex((t) => t.id === activeTaskId);
 
-      return prev.map((l) => {
-        if (l.id === sourceList.id) {
-          return { ...l, tasks: l.tasks.filter((t) => t.id !== activeTaskId) };
-        }
-        if (l.id === destList.id) {
-          const newTasks = [...l.tasks];
-          newTasks.splice(insertIndex, 0, { ...task, listId: destList.id });
-          return { ...l, tasks: newTasks };
-        }
-        return l;
-      });
+      if (activeList.id === overList!.id) {
+        // Same-list reorder — give immediate visual feedback
+        if (!overTaskId) return prev;
+        const overIndex = overListInPrev.tasks.findIndex((t) => t.id === overTaskId);
+        if (overIndex === -1 || activeIndex === overIndex) return prev;
+        return prev.map((l) =>
+          l.id === activeList.id
+            ? { ...l, tasks: arrayMove(l.tasks, activeIndex, overIndex) }
+            : l,
+        );
+      } else {
+        // Cross-list move
+        const overIndex = overTaskId
+          ? overListInPrev.tasks.findIndex((t) => t.id === overTaskId)
+          : -1;
+        const insertIndex = overIndex >= 0 ? overIndex : overListInPrev.tasks.length;
+
+        return prev.map((l) => {
+          if (l.id === activeList.id) {
+            return { ...l, tasks: l.tasks.filter((t) => t.id !== activeTaskId) };
+          }
+          if (l.id === overList!.id) {
+            const newTasks = [...l.tasks];
+            newTasks.splice(insertIndex, 0, { ...task, listId: overList!.id });
+            return { ...l, tasks: newTasks };
+          }
+          return l;
+        });
+      }
     });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    isDraggingRef.current = false;
     setActiveId(null);
     setActiveType(null);
+    lastOverIdRef.current = null;
 
-    if (!over) return;
+    if (!over) {
+      // Cancelled — sync back to server state
+      setLists(initialLists);
+      return;
+    }
 
     if (activeType === 'list') {
-      const oldIndex = listIds.indexOf(active.id as string);
-      const newIndex = listIds.indexOf(over.id as string);
+      const currentListIds = lists.map((l) => l.id);
+      const oldIndex = currentListIds.indexOf(active.id as string);
+      const newIndex = currentListIds.indexOf(over.id as string);
       if (oldIndex !== newIndex) {
-        const newOrder = arrayMove(listIds, oldIndex, newIndex);
+        const newOrder = arrayMove(currentListIds, oldIndex, newIndex);
         setLists((prev) => arrayMove(prev, oldIndex, newIndex));
+        isDirtyRef.current = true;
         listReorder.mutate({ boardId, listIds: newOrder });
       }
       return;
     }
 
     if (activeType === 'task') {
-      // Build task reorder payload from current local state
+      // lists state already reflects the final position from handleDragOver — just persist it
       const taskUpdates: { id: string; listId: string; order: number }[] = [];
       for (const list of lists) {
         for (let i = 0; i < list.tasks.length; i++) {
-          const task = list.tasks[i];
-          taskUpdates.push({ id: task.id, listId: list.id, order: i });
+          taskUpdates.push({ id: list.tasks[i].id, listId: list.id, order: i });
         }
       }
-
-      // Also handle same-list reorder
-      const activeTaskId = active.id as string;
-      const overTaskId = over.id as string;
-      const currentList = lists.find((l) => l.tasks.some((t) => t.id === activeTaskId));
-      if (currentList && activeTaskId !== overTaskId) {
-        const oldIdx = currentList.tasks.findIndex((t) => t.id === activeTaskId);
-        const newIdx = currentList.tasks.findIndex((t) => t.id === overTaskId);
-        if (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) {
-          const newTasks = arrayMove(currentList.tasks, oldIdx, newIdx);
-          setLists((prev) =>
-            prev.map((l) =>
-              l.id === currentList.id ? { ...l, tasks: newTasks } : l,
-            ),
-          );
-          // Rebuild updates with new order
-          taskUpdates.length = 0;
-          for (const list of lists) {
-            const tasks = list.id === currentList.id ? newTasks : list.tasks;
-            for (let i = 0; i < tasks.length; i++) {
-              taskUpdates.push({ id: tasks[i].id, listId: list.id, order: i });
-            }
-          }
-        }
-      }
-
       if (taskUpdates.length > 0) {
+        isDirtyRef.current = true;
         taskReorder.mutate({ tasks: taskUpdates });
       }
     }
@@ -193,7 +259,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
     <div className="flex-1 overflow-x-auto overflow-y-hidden">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -214,9 +280,9 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
           <AddListButton boardId={boardId} />
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>
           {activeTask ? (
-            <div className="w-72 opacity-80">
+            <div className="w-[280px] rotate-1 opacity-90 shadow-xl">
               <TaskCard
                 taskId={activeTask.id}
                 boardId={boardId}
