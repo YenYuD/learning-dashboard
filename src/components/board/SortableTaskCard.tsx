@@ -7,13 +7,14 @@ import { TaskCard } from './TaskCard';
 
 interface SortableTaskCardProps {
   id: string;
+  boardId: string;
   title: string;
   description?: string;
   totalMinutes?: number;
   onClick?: () => void;
 }
 
-export function SortableTaskCard({ id, title, description, totalMinutes, onClick }: SortableTaskCardProps) {
+export function SortableTaskCard({ id, boardId, title, description, totalMinutes, onClick }: SortableTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -32,6 +33,8 @@ export function SortableTaskCard({ id, title, description, totalMinutes, onClick
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <TaskCard
+        taskId={id}
+        boardId={boardId}
         title={title}
         description={description}
         totalMinutes={totalMinutes}

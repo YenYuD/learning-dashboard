@@ -135,6 +135,8 @@ export function ListColumn({ listId, boardId, title, tasks, allLists }: ListColu
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
+              taskId={task.id}
+              boardId={boardId}
               title={task.title}
               description={task.description}
               totalMinutes={task.totalMinutes}

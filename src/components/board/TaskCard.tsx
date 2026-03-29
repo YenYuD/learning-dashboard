@@ -1,10 +1,12 @@
 // src/components/board/TaskCard.tsx
 'use client';
 
-import { Clock } from 'lucide-react';
-import { Card, CardContent } from '~/components/ui/card';
+import { Clock, MoreHorizontal, Play } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface TaskCardProps {
+  taskId: string;
+  boardId: string;
   title: string;
   description?: string;
   totalMinutes?: number;
@@ -21,28 +23,47 @@ function formatMinutes(minutes: number): string {
 }
 
 export function TaskCard({
+  taskId,
+  boardId,
   title,
   description,
   totalMinutes = 0,
   onClick,
 }: TaskCardProps) {
+  const router = useRouter();
+
   return (
-    <Card
-      className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+    <div
+      className="relative flex flex-col gap-2 rounded-lg border border-[#E8E8E8] bg-white p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
       onClick={onClick}
     >
-      <CardContent className="p-3">
-        <p className="text-sm font-medium leading-snug">{title}</p>
-        {description && (
-          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-            {description}
-          </p>
-        )}
-        <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock size={12} />
-          <span>{formatMinutes(totalMinutes)}</span>
-        </div>
-      </CardContent>
-    </Card>
+      <p className="text-sm font-medium text-[#0D0D0D] leading-snug pr-6">{title}</p>
+      {description && (
+        <p className="text-xs text-[#7A7A7A] line-clamp-2">{description}</p>
+      )}
+      <div className="flex items-center gap-1.5 text-xs text-[#7A7A7A]">
+        <Clock size={14} />
+        <span>{formatMinutes(totalMinutes)}</span>
+      </div>
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[#E42313] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#C91F10] transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          router.push(`/timer?taskId=${taskId}&boardId=${boardId}`);
+        }}
+      >
+        <Play size={14} fill="white" />
+        Start Timer
+      </button>
+      <MoreHorizontal
+        size={16}
+        className="absolute top-3.5 right-3.5 text-[#9CA3AF]"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.();
+        }}
+      />
+    </div>
   );
 }
