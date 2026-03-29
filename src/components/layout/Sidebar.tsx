@@ -16,6 +16,7 @@ import { CreateBoardModal } from '~/components/dialogs/CreateBoardModal';
 export function Sidebar() {
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(false);
+  const utils = trpc.useUtils();
 
   const { data: boards, isLoading } = trpc.board.list.useQuery({
     userId: MOCK_USER_ID,
@@ -65,6 +66,7 @@ export function Sidebar() {
                   <Link
                     key={board.id}
                     href={`/board/${board.id}`}
+                    onMouseEnter={() => utils.board.byId.prefetch({ id: board.id })}
                     className={cn(
                       'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative',
                       isActive
