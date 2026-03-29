@@ -38,6 +38,7 @@ export function WeeklyBarChart() {
 
   const chartData = data?.data ?? [];
   const boardNames = data?.boardNames ?? [];
+  const boardColors = data?.boardColors ?? {};
 
   return (
     <Card>
@@ -51,7 +52,7 @@ export function WeeklyBarChart() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }} style={{ outline: 'none' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="day"
@@ -71,14 +72,22 @@ export function WeeklyBarChart() {
                   borderRadius: '6px',
                   fontSize: 12,
                 }}
+                itemStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                formatter={(value) => `${Number(value ?? 0)} hr`}
               />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Legend
+                wrapperStyle={{ fontSize: 12 }}
+                formatter={(value) => (
+                  <span style={{ color: 'hsl(var(--muted-foreground))' }}>{value}</span>
+                )}
+              />
               {boardNames.map((name, i) => (
                 <Bar
                   key={name}
                   dataKey={name}
                   stackId="a"
-                  fill={CHART_COLORS[i % CHART_COLORS.length]}
+                  fill={boardColors[name] ?? CHART_COLORS[i % CHART_COLORS.length]}
                   radius={i === boardNames.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}

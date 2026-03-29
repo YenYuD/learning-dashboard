@@ -4,7 +4,6 @@
 import {
   PieChart,
   Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
@@ -48,7 +47,7 @@ export function BoardDonutChart() {
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
-                  data={chartData}
+                  data={chartData.map((d) => ({ ...d, fill: d.color }))}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
@@ -56,9 +55,6 @@ export function BoardDonutChart() {
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {chartData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
                 </Pie>
                 <Tooltip
                   contentStyle={{
@@ -67,7 +63,11 @@ export function BoardDonutChart() {
                     borderRadius: '6px',
                     fontSize: 12,
                   }}
-                  formatter={(value) => [`${value}%`, '']}
+                  itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  formatter={(value, name) => {
+                    return [`${Number(value ?? 0)}%`, name];
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
