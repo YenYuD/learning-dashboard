@@ -11,17 +11,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
 import { MOCK_USER_ID } from '~/lib/constants';
+import type { TimeRange } from '~/app/(app)/dashboard/page';
 
-export function BoardDonutChart() {
+const TITLES: Record<TimeRange, string> = {
+  today: '今日時間佔比',
+  week: '本週時間佔比',
+  month: '本月時間佔比',
+  year: '本年時間佔比',
+};
+
+function getSince(timeRange: TimeRange): Date {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (timeRange === 'today') return today;
+  if (timeRange === 'week') {
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+    return weekStart;
+  }
+  if (timeRange === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  return new Date(now.getFullYear(), 0, 1);
+}
+
+interface BoardDonutChartProps {
+  timeRange: TimeRange;
+}
+
+export function BoardDonutChart({ timeRange }: BoardDonutChartProps) {
   const { data, isLoading } = trpc.analytics.boardDistribution.useQuery({
     userId: MOCK_USER_ID,
+    since: getSince(timeRange),
   });
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">時間佔比</CardTitle>
+          <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[220px] w-full" />
@@ -35,12 +61,12 @@ export function BoardDonutChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">時間佔比</CardTitle>
+        <CardTitle className="text-base">{TITLES[timeRange]}</CardTitle>
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
-            尚無學習記錄
+            {TITLES[timeRange].replace('佔比', '')}尚無學習記錄
           </div>
         ) : (
           <>

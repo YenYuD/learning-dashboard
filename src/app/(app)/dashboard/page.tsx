@@ -8,7 +8,7 @@ import { WeeklyBarChart } from '~/components/dashboard/WeeklyBarChart';
 import { BoardDonutChart } from '~/components/dashboard/BoardDonutChart';
 import { DailyTrendChart } from '~/components/dashboard/DailyTrendChart';
 
-export type TimeRange = 'today' | 'week' | 'month';
+export type TimeRange = 'today' | 'week' | 'month' | 'year';
 
 export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
@@ -22,11 +22,11 @@ export default function DashboardPage() {
 
       <StatsRow />
 
-      <WeeklyBarChart />
+      <WeeklyBarChart timeRange={timeRange} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <BoardDonutChart />
-        <DailyTrendChart />
+        <BoardDonutChart timeRange={timeRange} />
+        <DailyTrendChart timeRange={timeRange} />
       </div>
     </div>
   );
