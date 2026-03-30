@@ -80,6 +80,13 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
       }
     },
     onSuccess: (newBoard) => {
+      // 立即將 optimistic ID 替換成真實 ID，避免 Sidebar 連結仍指向不存在的 ID
+      utils.board.list.setData({ userId: MOCK_USER_ID }, (old) => {
+        if (!old) return old;
+        return old.map((board) =>
+          board.id.startsWith('optimistic-') ? { ...board, id: newBoard.id } : board,
+        );
+      });
       utils.board.list.invalidate({ userId: MOCK_USER_ID });
       onOpenChange(false);
       setBoardName('');
