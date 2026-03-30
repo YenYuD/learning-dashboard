@@ -1,12 +1,14 @@
-/**
- * Creates context for tRPC requests
- * @see https://trpc.io/docs/v11/context
- */
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '~/auth';
+import type { Session } from 'next-auth';
 
-// For App Router, we don't have access to req/res in the same way
-// Context is created per request
-export async function createContext() {
-  return {};
+export async function createContext(_opts: FetchCreateContextFnOptions) {
+  const session = await getServerSession(authOptions);
+  return {
+    session,
+    userId: session?.user?.id ?? null,
+  };
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
