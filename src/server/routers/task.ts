@@ -1,13 +1,16 @@
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 
 export const taskRouter = router({
-  byId: publicProcedure
+  byId: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) => {
-      return prisma.task.findUniqueOrThrow({
-        where: { id: input.id },
+    .query(({ ctx, input }) => {
+      return prisma.task.findFirstOrThrow({
+        where: {
+          id: input.id,
+          list: { board: { user_id: ctx.userId } },
+        },
         include: {
           list: { select: { boardId: true } },
           timeEntries: true,
@@ -15,15 +18,19 @@ export const taskRouter = router({
       });
     }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       listId: z.string(),
       title: z.string().min(1),
       description: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Verify list/board ownership via join
       const maxOrder = await prisma.task.findFirst({
-        where: { listId: input.listId },
+        where: {
+          listId: input.listId,
+          list: { board: { user_id: ctx.userId } },
+        },
         orderBy: { order: 'desc' },
         select: { order: true },
       });
@@ -32,25 +39,30 @@ export const taskRouter = router({
       });
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.string(),
       title: z.string().min(1).optional(),
       description: z.string().optional(),
     }))
-    .mutation(({ input }) => {
+    .mutation(({ ctx, input }) => {
       const { id, ...data } = input;
-      return prisma.task.update({ where: { id }, data });
+      return prisma.task.update({
+        where: { id, list: { board: { user_id: ctx.userId } } },
+        data,
+      });
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ input }) => {
-      return prisma.task.delete({ where: { id: input.id } });
+    .mutation(({ ctx, input }) => {
+      return prisma.task.delete({
+        where: { id: input.id, list: { board: { user_id: ctx.userId } } },
+      });
     }),
 
   // 處理同 list 內排序，以及跨 list 移動
-  reorder: publicProcedure
+  reorder: protectedProcedure
     .input(z.object({
       tasks: z.array(z.object({
         id: z.string(),
@@ -58,10 +70,13 @@ export const taskRouter = router({
         order: z.number(),
       })),
     }))
-    .mutation(({ input }) => {
+    .mutation(({ ctx, input }) => {
       return prisma.$transaction(
         input.tasks.map(({ id, listId, order }) =>
-          prisma.task.update({ where: { id }, data: { listId, order } })
+          prisma.task.update({
+            where: { id, list: { board: { user_id: ctx.userId } } },
+            data: { listId, order },
+          })
         )
       );
     }),
