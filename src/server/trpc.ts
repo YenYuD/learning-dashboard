@@ -8,7 +8,7 @@
  * @see https://trpc.io/docs/v11/procedures
  */
 
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { transformer } from '~/utils/transformer';
 import type { Context } from './context';
 import z, { ZodError } from 'zod';
@@ -55,3 +55,20 @@ export const mergeRouters = t.mergeRouters;
  * @see https://trpc.io/docs/v11/server/server-side-calls
  */
 export const createCallerFactory = t.createCallerFactory;
+
+/**
+ * Create a protected procedure
+ * Throws UNAUTHORIZED if there is no session/userId in context
+ * @see https://trpc.io/docs/v11/middlewares
+ */
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      userId: ctx.userId,
+    },
+  });
+});

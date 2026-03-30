@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 
 const WEEKDAY_HEADERS = ['一', '二', '三', '四', '五', '六', '日'];
 const MONTH_NAMES = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
@@ -29,11 +28,7 @@ export function MonthlyCalendar() {
     return { year: d.getFullYear(), month: d.getMonth() + 1, todayDay: d.getDate() };
   }, []);
 
-  const { data, isLoading } = trpc.analytics.monthlyCalendar.useQuery({
-    userId: MOCK_USER_ID,
-    year,
-    month,
-  });
+  const { data, isLoading } = trpc.analytics.monthlyCalendar.useQuery({ year, month });
 
   // Map day → minutes for O(1) lookup
   const minutesByDay = useMemo(() => {

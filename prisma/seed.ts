@@ -4,11 +4,51 @@
  * @link https://www.prisma.io/docs/guides/database/seed-database
  */
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
+
+  // 1. Migrate boards from 'demo-user' to 'user-demo' first (before touching User records)
+  const migratedBoards = await prisma.board.updateMany({
+    where: { user_id: 'demo-user' },
+    data: { user_id: 'user-demo' },
+  });
+  if (migratedBoards.count > 0) {
+    console.log(
+      `✅ Migrated ${migratedBoards.count} boards from 'demo-user' to 'user-demo'`,
+    );
+  }
+
+  // 2. Delete orphan 'demo-user' User if it exists (frees up the email)
+  const orphanUser = await prisma.user.findUnique({
+    where: { id: 'demo-user' },
+  });
+  if (orphanUser) {
+    await prisma.user.delete({ where: { id: 'demo-user' } });
+    console.log(`✅ Deleted orphan user 'demo-user'`);
+  }
+
+  // 3. Create/update the demo user with proper auth fields
+  const demoPassword = await bcrypt.hash('demo1234', 12);
+
+  const demoUser = await prisma.user.upsert({
+    where: { id: 'user-demo' },
+    update: {
+      email: 'demo@learning-dashboard.app',
+      name: 'Demo User',
+      password: demoPassword,
+    },
+    create: {
+      id: 'user-demo',
+      email: 'demo@learning-dashboard.app',
+      name: 'Demo User',
+      password: demoPassword,
+    },
+  });
+  console.log(`✅ Demo user created/updated: ${demoUser.email}`);
 
   // Create sample boards
   const englishBoard = await prisma.board.create({
@@ -18,7 +58,7 @@ async function main() {
       icon: '📚',
       color: '#3B82F6',
       order: 1,
-      user_id: 'demo-user',
+      user_id: 'user-demo',
       lists: {
         create: [
           {
@@ -74,7 +114,7 @@ async function main() {
       icon: '💻',
       color: '#10B981',
       order: 2,
-      user_id: 'demo-user',
+      user_id: 'user-demo',
       lists: {
         create: [
           {
@@ -121,7 +161,7 @@ async function main() {
       icon: '⛷️',
       color: '#F59E0B',
       order: 3,
-      user_id: 'demo-user',
+      user_id: 'user-demo',
     },
   });
 
@@ -130,9 +170,15 @@ async function main() {
     where: { id: englishBoard.id },
     include: { lists: { include: { tasks: true } } },
   });
-  const vocabList = englishBoardWithTasks!.lists.find(l => l.name === 'Vocabulary');
-  const toeflTask = vocabList!.tasks.find(t => t.title === 'Memorize 50 TOEFL words');
-  const reviewTask = vocabList!.tasks.find(t => t.title === 'Review last week vocabulary');
+  const vocabList = englishBoardWithTasks!.lists.find(
+    (l) => l.name === 'Vocabulary',
+  );
+  const toeflTask = vocabList!.tasks.find(
+    (t) => t.title === 'Memorize 50 TOEFL words',
+  );
+  const reviewTask = vocabList!.tasks.find(
+    (t) => t.title === 'Review last week vocabulary',
+  );
 
   // Add some sample time entries
   await prisma.timeEntry.create({
@@ -168,7 +214,9 @@ async function main() {
   });
 
   console.log('✅ Seeding completed!');
-  console.log(`Created boards: ${englishBoard.name}, ${leetcodeBoard.name}, ${skiingBoard.name}`);
+  console.log(
+    `Created boards: ${englishBoard.name}, ${leetcodeBoard.name}, ${skiingBoard.name}`,
+  );
 }
 
 main()

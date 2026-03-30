@@ -13,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 import type { TimeRange } from '~/app/(app)/dashboard/page';
 
 const DAYS_MAP: Record<TimeRange, number> = { today: 1, week: 7, month: 30, year: 365 };
@@ -36,7 +35,6 @@ interface DailyTrendChartProps {
 
 export function DailyTrendChart({ timeRange }: DailyTrendChartProps) {
   const { data, isLoading } = trpc.analytics.dailyTrend.useQuery({
-    userId: MOCK_USER_ID,
     days: DAYS_MAP[timeRange],
   });
 

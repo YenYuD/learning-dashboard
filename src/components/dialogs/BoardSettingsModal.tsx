@@ -13,7 +13,7 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
-import { BOARD_COLORS, MOCK_USER_ID } from '~/lib/constants';
+import { BOARD_COLORS } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
 
 interface BoardSettingsModalProps {
@@ -43,17 +43,17 @@ export function BoardSettingsModal({
   const updateBoard = trpc.board.update.useMutation({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: board.id });
-      utils.board.list.invalidate({ userId: MOCK_USER_ID });
+      utils.board.list.invalidate();
       // Board color/name changes affect all analytics charts — invalidate them too
-      utils.analytics.weeklyByBoard.invalidate({ userId: MOCK_USER_ID });
-      utils.analytics.boardDistribution.invalidate({ userId: MOCK_USER_ID });
+      utils.analytics.weeklyByBoard.invalidate();
+      utils.analytics.boardDistribution.invalidate();
       onOpenChange(false);
     },
   });
 
   const deleteBoard = trpc.board.delete.useMutation({
     onSuccess: () => {
-      utils.board.list.invalidate({ userId: MOCK_USER_ID });
+      utils.board.list.invalidate();
       onOpenChange(false);
       router.push('/dashboard');
     },

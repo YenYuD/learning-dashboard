@@ -1,8 +1,5 @@
 // src/lib/constants.ts
 
-/** MVP 階段無認證，使用固定 demo user ID */
-export const MOCK_USER_ID = 'user-demo';
-
 /**
  * Board 可選顏色（5×5，按色相環排列，飽和度壓在 35-50% 的復古陶瓷風）
  * 所有顏色視覺重量相近，在圖表中任意搭配都柔和協調。

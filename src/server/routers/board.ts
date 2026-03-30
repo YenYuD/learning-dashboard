@@ -2,60 +2,56 @@
  * Board router for Learning Dashboard
  * Handles CRUD operations for boards with task-based and time-only types
  */
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { TRPCError } from '@trpc/server';
 
 export const boardRouter = router({
   /**
    * List all boards for a user, ordered by order field
    */
-  list: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      }),
-    )
-    .query(async ({ input }) => {
-      return await prisma.board.findMany({
-        where: {
-          user_id: input.userId,
-        },
-        include: {
-          lists: {
-            include: {
-              tasks: true,
-            },
-            orderBy: {
-              order: 'asc',
-            },
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return await prisma.board.findMany({
+      where: {
+        user_id: ctx.userId,
+      },
+      include: {
+        lists: {
+          include: {
+            tasks: true,
           },
-          timeEntries: {
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 10, // Latest 10 time entries
+          orderBy: {
+            order: 'asc',
           },
         },
-        orderBy: {
-          order: 'asc',
+        timeEntries: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 10, // Latest 10 time entries
         },
-      });
-    }),
+      },
+      orderBy: {
+        order: 'asc',
+      },
+    });
+  }),
 
   /**
    * Get a single board by ID with all related data
    */
-  byId: publicProcedure
+  byId: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
-    .query(async ({ input }) => {
-      return await prisma.board.findUnique({
+    .query(async ({ ctx, input }) => {
+      return await prisma.board.findFirst({
         where: {
           id: input.id,
+          user_id: ctx.userId,
         },
         include: {
           lists: {
@@ -89,21 +85,20 @@ export const boardRouter = router({
   /**
    * Create a new board
    */
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1, 'Board name is required'),
         type: z.enum(['TASK_BASED', 'TIME_ONLY']),
-        userId: z.string(),
         icon: z.string().optional(),
         color: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       // Get the highest order number to place new board at the end
       const maxOrder = await prisma.board.findFirst({
         where: {
-          user_id: input.userId,
+          user_id: ctx.userId,
         },
         orderBy: {
           order: 'desc',
@@ -125,7 +120,7 @@ export const boardRouter = router({
         data: {
           name: input.name,
           type: input.type,
-          user_id: input.userId,
+          user_id: ctx.userId,
           icon: input.icon,
           color: input.color,
           order: (maxOrder?.order ?? -1) + 1,
@@ -139,22 +134,22 @@ export const boardRouter = router({
   /**
    * Update board properties
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
         name: z.string().min(1).optional(),
-        type: z.enum(['TASK_BASED', 'TIME_ONLY']).optional(),
         icon: z.string().optional(),
         color: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
 
       return await prisma.board.update({
         where: {
           id,
+          user_id: ctx.userId,
         },
         data,
       });
@@ -163,16 +158,17 @@ export const boardRouter = router({
   /**
    * Delete a board (cascades to lists, tasks, and time entries)
    */
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       return await prisma.board.delete({
         where: {
           id: input.id,
+          user_id: ctx.userId,
         },
       });
     }),
@@ -180,20 +176,19 @@ export const boardRouter = router({
   /**
    * Reorder boards
    */
-  reorder: publicProcedure
+  reorder: protectedProcedure
     .input(
       z.object({
-        userId: z.string(),
         boardIds: z.array(z.string()),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       // Update order for all boards in the array
       const updatePromises = input.boardIds.map((boardId, index) =>
         prisma.board.update({
           where: {
             id: boardId,
-            user_id: input.userId, // Ensure user owns this board
+            user_id: ctx.userId, // Ensure user owns this board
           },
           data: {
             order: index,
@@ -207,14 +202,20 @@ export const boardRouter = router({
   /**
    * Get board statistics
    */
-  stats: publicProcedure
+  stats: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
-    .query(async ({ input }) => {
-      const [totalLists, totalTasks, totalTimeMinutes, completedTasks] =
+    .query(async ({ ctx, input }) => {
+      const board = await prisma.board.findFirst({
+        where: { id: input.id, user_id: ctx.userId },
+        select: { id: true },
+      });
+      if (!board) throw new TRPCError({ code: 'NOT_FOUND', message: 'Board not found' });
+
+      const [totalLists, totalTasks, totalTimeMinutes] =
         await prisma.$transaction([
           // Count lists
           prisma.list.count({
@@ -239,21 +240,11 @@ export const boardRouter = router({
               duration: true,
             },
           }),
-          // This is a placeholder - you might want to add a 'completed' field to Task model
-          prisma.task.count({
-            where: {
-              list: {
-                boardId: input.id,
-              },
-              // completed: true, // Uncomment when you add this field
-            },
-          }),
         ]);
 
       return {
         totalLists,
         totalTasks,
-        completedTasks,
         totalTimeMinutes: totalTimeMinutes._sum.duration ?? 0,
         totalTimeHours: ((totalTimeMinutes._sum.duration ?? 0) / 60).toFixed(1),
       };

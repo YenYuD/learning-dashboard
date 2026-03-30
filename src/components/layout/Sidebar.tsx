@@ -9,18 +9,16 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 import { useState } from 'react';
 import { CreateBoardModal } from '~/components/dialogs/CreateBoardModal';
+import { UserMenu } from '~/components/auth/UserMenu';
 
 export function Sidebar() {
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(false);
   const utils = trpc.useUtils();
 
-  const { data: boards, isLoading } = trpc.board.list.useQuery({
-    userId: MOCK_USER_ID,
-  });
+  const { data: boards, isLoading } = trpc.board.list.useQuery();
 
   return (
     <>
@@ -28,7 +26,9 @@ export function Sidebar() {
         {/* Logo */}
         <div className="flex h-14 items-center gap-3 px-4 border-b border-sidebar-border">
           <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
-          <span className="text-lg font-semibold text-sidebar-foreground">Learning</span>
+          <span className="text-lg font-semibold text-sidebar-foreground">
+            Learning
+          </span>
         </div>
 
         {/* Nav */}
@@ -66,7 +66,9 @@ export function Sidebar() {
                   <Link
                     key={board.id}
                     href={`/board/${board.id}`}
-                    onMouseEnter={() => utils.board.byId.prefetch({ id: board.id })}
+                    onMouseEnter={() =>
+                      utils.board.byId.prefetch({ id: board.id })
+                    }
                     className={cn(
                       'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative',
                       isActive
@@ -77,7 +79,10 @@ export function Sidebar() {
                     {isActive && (
                       <span
                         className="absolute left-0 top-1 bottom-1 w-1 rounded-full"
-                        style={{ backgroundColor: board.color ?? 'hsl(var(--sidebar-accent))' }}
+                        style={{
+                          backgroundColor:
+                            board.color ?? 'hsl(var(--sidebar-accent))',
+                        }}
                       />
                     )}
                     <BoardIcon icon={board.icon} size={16} />
@@ -93,8 +98,8 @@ export function Sidebar() {
           </div>
         </nav>
 
-        {/* Footer: + 新增 Board */}
-        <div className="border-t border-sidebar-border p-3">
+        {/* Footer */}
+        <div className="border-t border-sidebar-border p-3 space-y-2">
           <Button
             variant="ghost"
             size="sm"
@@ -104,6 +109,7 @@ export function Sidebar() {
             <Plus size={16} />
             新增 Board
           </Button>
+          <UserMenu />
         </div>
       </aside>
 

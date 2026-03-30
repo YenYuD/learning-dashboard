@@ -1,15 +1,23 @@
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { TRPCError } from '@trpc/server';
 
 export const listRouter = router({
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       boardId: z.string(),
       name: z.string().min(1),
       description: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Verify board ownership before creating list
+      const board = await prisma.board.findFirst({
+        where: { id: input.boardId, user_id: ctx.userId },
+        select: { id: true },
+      });
+      if (!board) throw new TRPCError({ code: 'NOT_FOUND', message: 'Board not found' });
+
       const maxOrder = await prisma.list.findFirst({
         where: { boardId: input.boardId },
         orderBy: { order: 'desc' },
@@ -20,32 +28,40 @@ export const listRouter = router({
       });
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.string(),
       name: z.string().min(1).optional(),
       description: z.string().optional(),
     }))
-    .mutation(({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return prisma.list.update({ where: { id }, data });
+      return prisma.list.update({
+        where: { id, board: { user_id: ctx.userId } },
+        data,
+      });
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ input }) => {
-      return prisma.list.delete({ where: { id: input.id } });
+    .mutation(async ({ ctx, input }) => {
+      return prisma.list.delete({
+        where: { id: input.id, board: { user_id: ctx.userId } },
+      });
     }),
 
-  reorder: publicProcedure
+  reorder: protectedProcedure
     .input(z.object({
       boardId: z.string(),
       listIds: z.array(z.string()),
     }))
-    .mutation(({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       return prisma.$transaction(
         input.listIds.map((id, index) =>
-          prisma.list.update({ where: { id }, data: { order: index } })
+          prisma.list.update({
+            where: { id, board: { user_id: ctx.userId } },
+            data: { order: index },
+          })
         )
       );
     }),

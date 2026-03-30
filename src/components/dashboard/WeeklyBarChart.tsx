@@ -14,7 +14,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 import type { TimeRange } from '~/app/(app)/dashboard/page';
 
 // 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
@@ -39,10 +38,7 @@ interface WeeklyBarChartProps {
 }
 
 export function WeeklyBarChart({ timeRange }: WeeklyBarChartProps) {
-  const { data, isLoading } = trpc.analytics.weeklyByBoard.useQuery({
-    userId: MOCK_USER_ID,
-    timeRange,
-  });
+  const { data, isLoading } = trpc.analytics.weeklyByBoard.useQuery({ timeRange });
 
   if (isLoading) {
     return (

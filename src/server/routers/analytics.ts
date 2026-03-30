@@ -2,7 +2,7 @@
  * Analytics router for Learning Dashboard
  * Provides dashboard summary stats, weekly breakdown, board distribution, and daily trend
  */
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 
@@ -11,14 +11,13 @@ const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4
 
 export const analyticsRouter = router({
   /** Dashboard summary: today / week / month / year totals + streak */
-  summary: publicProcedure
+  summary: protectedProcedure
     .input(z.object({
-      userId: z.string(),
       // Client passes its local date as "YYYY-MM-DD" so server-side date
       // boundaries match the user's timezone rather than server UTC.
       todayDate: z.string(),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       // Anchor all calculations to the client's local midnight (treated as UTC midnight)
       const todayStart = new Date(input.todayDate + 'T00:00:00.000Z');
       const y = todayStart.getUTCFullYear();
@@ -39,7 +38,7 @@ export const analyticsRouter = router({
 
       const lastMonthStart = new Date(Date.UTC(y, m - 1, 1));
 
-      const userFilter = { board: { user_id: input.userId } };
+      const userFilter = { board: { user_id: ctx.userId } };
 
       const [
         todayAgg,
@@ -114,14 +113,13 @@ export const analyticsRouter = router({
     }),
 
   /** Weekly bar chart – time per board per day/week, filtered by timeRange */
-  weeklyByBoard: publicProcedure
+  weeklyByBoard: protectedProcedure
     .input(
       z.object({
-        userId: z.string(),
         timeRange: z.enum(['today', 'week', 'month', 'year']).default('week'),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -152,7 +150,7 @@ export const analyticsRouter = router({
 
       const entries = await prisma.timeEntry.findMany({
         where: {
-          board: { user_id: input.userId },
+          board: { user_id: ctx.userId },
           createdAt: { gte: startDate },
         },
         include: { board: { select: { name: true, color: true } } },
@@ -179,16 +177,15 @@ export const analyticsRouter = router({
     }),
 
   /** Donut chart – time distribution by board */
-  boardDistribution: publicProcedure
+  boardDistribution: protectedProcedure
     .input(
       z.object({
-        userId: z.string(),
         since: z.date().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {
-        board: { user_id: input.userId },
+        board: { user_id: ctx.userId },
       };
       if (input.since) {
         where.createdAt = { gte: input.since };
@@ -201,7 +198,7 @@ export const analyticsRouter = router({
       });
 
       const boards = await prisma.board.findMany({
-        where: { user_id: input.userId },
+        where: { user_id: ctx.userId },
         select: { id: true, name: true, color: true },
       });
 
@@ -222,19 +219,18 @@ export const analyticsRouter = router({
     }),
 
   /** Monthly calendar – total minutes per day for a given year/month */
-  monthlyCalendar: publicProcedure
+  monthlyCalendar: protectedProcedure
     .input(z.object({
-      userId: z.string(),
       year:  z.number(),
       month: z.number(), // 1-12, from client's local date
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
       const monthEnd   = new Date(Date.UTC(input.year, input.month,     1)); // exclusive
 
       const entries = await prisma.timeEntry.findMany({
         where: {
-          board: { user_id: input.userId },
+          board: { user_id: ctx.userId },
           createdAt: { gte: monthStart, lt: monthEnd },
         },
         select: { duration: true, createdAt: true },
@@ -250,20 +246,19 @@ export const analyticsRouter = router({
     }),
 
   /** Monthly board breakdown – total minutes per board for current month */
-  monthlyBoardBreakdown: publicProcedure
+  monthlyBoardBreakdown: protectedProcedure
     .input(z.object({
-      userId: z.string(),
       year:   z.number(),
       month:  z.number(), // 1-12
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
       const monthEnd   = new Date(Date.UTC(input.year, input.month,     1));
 
       const entries = await prisma.timeEntry.groupBy({
         by: ['boardId'],
         where: {
-          board: { user_id: input.userId },
+          board: { user_id: ctx.userId },
           createdAt: { gte: monthStart, lt: monthEnd },
         },
         _sum: { duration: true },
@@ -286,14 +281,13 @@ export const analyticsRouter = router({
     }),
 
   /** Daily trend – hours per day for the last N days */
-  dailyTrend: publicProcedure
+  dailyTrend: protectedProcedure
     .input(
       z.object({
-        userId: z.string(),
         days: z.number().default(7),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const now = new Date();
       const startDate = new Date(
         now.getFullYear(),
@@ -304,7 +298,7 @@ export const analyticsRouter = router({
       // Fetch all entries in range at once instead of N queries
       const entries = await prisma.timeEntry.findMany({
         where: {
-          board: { user_id: input.userId },
+          board: { user_id: ctx.userId },
           createdAt: { gte: startDate },
         },
         select: { duration: true, createdAt: true },
