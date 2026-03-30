@@ -10,7 +10,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 import type { TimeRange } from '~/app/(app)/dashboard/page';
 
 const TITLES: Record<TimeRange, string> = {
@@ -39,7 +38,6 @@ interface BoardDonutChartProps {
 
 export function BoardDonutChart({ timeRange }: BoardDonutChartProps) {
   const { data, isLoading } = trpc.analytics.boardDistribution.useQuery({
-    userId: MOCK_USER_ID,
     since: getSince(timeRange),
   });
 

@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { StatsCard } from './StatsCard';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 
 function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(1);
@@ -31,10 +30,7 @@ export function StatsRow() {
     return `${yyyy}-${mm}-${dd}`;
   }, []);
 
-  const { data, isLoading } = trpc.analytics.summary.useQuery({
-    userId: MOCK_USER_ID,
-    todayDate,
-  });
+  const { data, isLoading } = trpc.analytics.summary.useQuery({ todayDate });
 
   if (isLoading || !data) {
     return (

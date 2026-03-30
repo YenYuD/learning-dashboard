@@ -14,7 +14,7 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
-import { BOARD_COLORS, MOCK_USER_ID } from '~/lib/constants';
+import { BOARD_COLORS } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
 import { ListChecks, Timer } from 'lucide-react';
 
@@ -51,9 +51,9 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
 
   const createBoard = trpc.board.create.useMutation({
     onMutate: async (input) => {
-      await utils.board.list.cancel({ userId: MOCK_USER_ID });
-      const previous = utils.board.list.getData({ userId: MOCK_USER_ID });
-      utils.board.list.setData({ userId: MOCK_USER_ID }, (old) => {
+      await utils.board.list.cancel();
+      const previous = utils.board.list.getData();
+      utils.board.list.setData(undefined, (old) => {
         if (!old) return old;
         return [
           ...old,
@@ -64,7 +64,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
             icon: input.icon ?? null,
             color: input.color ?? null,
             order: old.length,
-            user_id: MOCK_USER_ID,
+            user_id: '',
             lists: [],
             timeEntries: [],
             createdAt: new Date(),
@@ -76,18 +76,18 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
     },
     onError: (_err, _input, context) => {
       if (context?.previous) {
-        utils.board.list.setData({ userId: MOCK_USER_ID }, context.previous);
+        utils.board.list.setData(undefined, context.previous);
       }
     },
     onSuccess: (newBoard) => {
       // 立即將 optimistic ID 替換成真實 ID，避免 Sidebar 連結仍指向不存在的 ID
-      utils.board.list.setData({ userId: MOCK_USER_ID }, (old) => {
+      utils.board.list.setData(undefined, (old) => {
         if (!old) return old;
         return old.map((board) =>
           board.id.startsWith('optimistic-') ? { ...board, id: newBoard.id } : board,
         );
       });
-      utils.board.list.invalidate({ userId: MOCK_USER_ID });
+      utils.board.list.invalidate();
       onOpenChange(false);
       setBoardName('');
       setBoardType('TASK_BASED');
@@ -102,7 +102,6 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
     createBoard.mutate({
       name: boardName.trim(),
       type: boardType,
-      userId: MOCK_USER_ID,
       icon: boardIcon || undefined,
       color: selectedColor,
     });

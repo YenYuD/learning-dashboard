@@ -5,7 +5,6 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import { MOCK_USER_ID } from '~/lib/constants';
 
 const MONTH_NAMES = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
 
@@ -22,11 +21,7 @@ export function MonthlyBoardBreakdown() {
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
   }, []);
 
-  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({
-    userId: MOCK_USER_ID,
-    year,
-    month,
-  });
+  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month });
 
   const maxMinutes = useMemo(() => {
     if (!data?.length) return 1;
