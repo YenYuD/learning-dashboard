@@ -1,37 +1,54 @@
 'use client';
 
+import { Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { loginSchema, type LoginFormData } from '~/lib/validations/auth';
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleCredentialLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError('');
     setLoading(true);
 
     const result = await signIn('credentials', {
-      email,
-      password,
+      email: data.email,
+      password: data.password,
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
-      setError('Email 或密碼不正確');
+      setServerError('Email 或密碼不正確');
       return;
     }
 
@@ -40,7 +57,7 @@ export default function LoginPage() {
   };
 
   const handleDemoLogin = async () => {
-    setError('');
+    setServerError('');
     setLoading(true);
 
     const result = await signIn('credentials', {
@@ -52,7 +69,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError('Demo 登入失敗，請確認 seed 已執行');
+      setServerError('Demo 登入失敗，請確認 seed 已執行');
       return;
     }
 
@@ -68,7 +85,12 @@ export default function LoginPage() {
     <div className="w-full max-w-sm space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Learning Dashboard</h1>
+        <div className="flex h-14 justify-center items-center gap-3 px-4 border-b border-sidebar-border">
+          <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
+          <span className="text-lg font-semibold text-sidebar-foreground">
+            Learning Dashboard
+          </span>
+        </div>
         <p className="mt-2 text-sm text-muted-foreground">
           登入以追蹤你的學習進度
         </p>
@@ -159,27 +181,31 @@ export default function LoginPage() {
       </div>
 
       {/* Email/Password form */}
-      <form onSubmit={handleCredentialLogin} className="space-y-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
           <Input
             type="email"
             placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            {...register('email')}
+            disabled={loading}
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
+          )}
         </div>
         <div>
           <Input
             type="password"
             placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            {...register('password')}
+            disabled={loading}
           />
+          {errors.password && (
+            <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
+          )}
         </div>
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
+        {serverError && (
+          <p className="text-sm text-destructive">{serverError}</p>
         )}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? '登入中...' : '登入'}

@@ -1,7 +1,7 @@
 // src/components/dialogs/CreateListModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import {
   Dialog,
@@ -19,26 +19,38 @@ interface CreateListModalProps {
   boardId: string;
 }
 
+interface CreateListFormData {
+  name: string;
+}
+
 export function CreateListModal({ open, onOpenChange, boardId }: CreateListModalProps) {
-  const [name, setName] = useState('');
   const utils = trpc.useUtils();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateListFormData>({
+    defaultValues: { name: '' },
+  });
 
   const createList = trpc.list.create.useMutation({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: boardId });
-      setName('');
+      reset();
       onOpenChange(false);
     },
   });
 
-  const handleSubmit = () => {
-    const trimmed = name.trim();
+  const onSubmit = (data: CreateListFormData) => {
+    const trimmed = data.name.trim();
     if (!trimmed) return;
     createList.mutate({ boardId, name: trimmed });
   };
 
   const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) setName('');
+    if (!isOpen) reset();
     onOpenChange(isOpen);
   };
 
@@ -60,39 +72,44 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
         <div className="h-px bg-border" />
 
         {/* Body */}
-        <div className="p-6 space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-foreground">
-              清單名稱
-            </label>
-            <Input
-              placeholder="例如：To Do、In Progress..."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={createList.isPending}
-              autoFocus
-            />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="p-6 space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                清單名稱
+              </label>
+              <Input
+                placeholder="例如：To Do、In Progress..."
+                {...register('name', { required: '清單名稱為必填' })}
+                disabled={createList.isPending}
+                autoFocus
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+            <div className="h-px bg-border" />
           </div>
-          <div className="h-px bg-border" />
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 pb-6">
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            className="px-5"
-          >
-            取消
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!name.trim() || createList.isPending}
-            className="px-5 bg-[#EF4444] hover:bg-[#DC2626] text-white"
-          >
-            {createList.isPending ? '建立中...' : '建立清單'}
-          </Button>
-        </div>
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 px-6 pb-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              className="px-5"
+            >
+              取消
+            </Button>
+            <Button
+              type="submit"
+              disabled={createList.isPending}
+              className="px-5 bg-[#EF4444] hover:bg-[#DC2626] text-white"
+            >
+              {createList.isPending ? '建立中...' : '建立清單'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

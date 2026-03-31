@@ -1,70 +1,69 @@
 'use client';
 
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { registerSchema, type RegisterFormData } from '~/lib/validations/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
 
-    if (password !== confirmPassword) {
-      setError('密碼不一致');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('密碼至少 6 個字元');
-      return;
-    }
-
+  const onSubmit = async (data: RegisterFormData) => {
+    setServerError('');
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
       });
 
-      const data = await res.json();
+      const resData = await res.json();
 
       if (!res.ok) {
-        setError(data.error || '註冊失敗');
+        setServerError(resData.error || '註冊失敗');
         setLoading(false);
         return;
       }
 
       // Auto sign-in after registration
       const result = await signIn('credentials', {
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       });
 
       setLoading(false);
 
       if (result?.error) {
-        setError('註冊成功但自動登入失敗，請手動登入');
+        setServerError('註冊成功但自動登入失敗，請手動登入');
         return;
       }
 
       router.push('/dashboard');
       router.refresh();
     } catch {
-      setError('網路錯誤，請稍後再試');
+      setServerError('網路錯誤，請稍後再試');
       setLoading(false);
     }
   };
@@ -78,7 +77,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form onSubmit={handleRegister} className="space-y-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div>
           <label className="text-xs text-muted-foreground mb-1.5 block">
             名稱
@@ -86,10 +85,12 @@ export default function RegisterPage() {
           <Input
             type="text"
             placeholder="你的名字"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+            {...register('name')}
+            disabled={loading}
           />
+          {errors.name && (
+            <p className="mt-1 text-sm text-destructive">{errors.name.message}</p>
+          )}
         </div>
         <div>
           <label className="text-xs text-muted-foreground mb-1.5 block">
@@ -98,10 +99,12 @@ export default function RegisterPage() {
           <Input
             type="email"
             placeholder="your@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            {...register('email')}
+            disabled={loading}
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
+          )}
         </div>
         <div>
           <label className="text-xs text-muted-foreground mb-1.5 block">
@@ -110,10 +113,12 @@ export default function RegisterPage() {
           <Input
             type="password"
             placeholder="至少 6 個字元"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            {...register('password')}
+            disabled={loading}
           />
+          {errors.password && (
+            <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
+          )}
         </div>
         <div>
           <label className="text-xs text-muted-foreground mb-1.5 block">
@@ -122,13 +127,15 @@ export default function RegisterPage() {
           <Input
             type="password"
             placeholder="再次輸入密碼"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
+            {...register('confirmPassword')}
+            disabled={loading}
           />
+          {errors.confirmPassword && (
+            <p className="mt-1 text-sm text-destructive">{errors.confirmPassword.message}</p>
+          )}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? '註冊中...' : '註冊'}
