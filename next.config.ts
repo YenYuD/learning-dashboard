@@ -10,6 +10,9 @@ import { env } from './src/server/env';
 const config: NextConfig = {
   reactStrictMode: true,
 
+  // Required for Docker standalone deployment
+  output: 'standalone',
+
   // Fix for workspace root warning
   outputFileTracingRoot: path.join(__dirname, '.'),
 

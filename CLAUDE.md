@@ -290,6 +290,15 @@ When implementing Phase 2:
    - End-to-end type safety with tRPC
    - Show key code sections
 
+## Database Migration Rules
+
+**NEVER modify a migration file after it has been applied to the database.** This causes Prisma checksum mismatch errors.
+
+- Migration files in `prisma/migrations/` are **immutable** once applied
+- Need schema changes? Always run `prisma migrate dev --name <description>` to create a **new** migration
+- Seed data (demo users, sample boards) belongs in `prisma/seed.ts`, NOT in migration SQL files
+- Need to add data alongside a schema change? Add it to `seed.ts` and run `prisma db seed`
+
 ## Important Notes
 
 - **Design-First**: Review design documents (03-Learning-Dashboard-產品規格書.md, 05-設計需求文件-Design-Brief.md) before implementing
