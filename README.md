@@ -7,7 +7,7 @@ A personal growth management system combining task management and time tracking 
 - **Framework:** Next.js 15 (App Router) + React 19 + TypeScript
 - **Backend:** tRPC v11 (end-to-end type safety)
 - **Database:** PostgreSQL + Prisma ORM
-- **Auth:** NextAuth.js (Google, GitHub, Facebook, Credentials)
+- **Auth:** NextAuth.js (Google, GitHub, Credentials)
 - **UI:** TailwindCSS + shadcn/ui
 - **Drag & Drop:** @dnd-kit
 - **Charts:** Recharts
@@ -21,7 +21,7 @@ A personal growth management system combining task management and time tracking 
 - **Drag & Drop** — Reorder lists and tasks across columns with @dnd-kit
 - **Time Tracking** — Built-in timer and manual entry, linked to boards or tasks
 - **Dashboard** — Weekly/monthly stats, daily trend charts, board breakdown, calendar heatmap
-- **Authentication** — Multi-provider OAuth (Google, GitHub, Facebook) + email/password registration
+- **Authentication** — Multi-provider OAuth (Google, GitHub) + email/password registration
 - **Templates** — Pre-configured board templates (Language Learning, Programming, Fitness, Custom)
 
 ## Getting Started
@@ -55,8 +55,6 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-FACEBOOK_CLIENT_ID=
-FACEBOOK_CLIENT_SECRET=
 ```
 
 ### Database Setup
