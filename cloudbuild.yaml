@@ -14,8 +14,6 @@
 #      echo -n "your-google-client-secret" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
 #      echo -n "your-github-client-id" | gcloud secrets create GITHUB_CLIENT_ID --data-file=-
 #      echo -n "your-github-client-secret" | gcloud secrets create GITHUB_CLIENT_SECRET --data-file=-
-#      echo -n "your-facebook-client-id" | gcloud secrets create FACEBOOK_CLIENT_ID --data-file=-
-#      echo -n "your-facebook-client-secret" | gcloud secrets create FACEBOOK_CLIENT_SECRET --data-file=-
 #
 #   4. Grant Cloud Build service account permissions:
 #      PROJECT_NUMBER=$(gcloud projects describe learning-dashboard-2026 --format='value(projectNumber)')
@@ -72,7 +70,7 @@ steps:
       - '3000'
       - '--allow-unauthenticated'
       - '--set-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GITHUB_CLIENT_ID=GITHUB_CLIENT_ID:latest,GITHUB_CLIENT_SECRET=GITHUB_CLIENT_SECRET:latest,FACEBOOK_CLIENT_ID=FACEBOOK_CLIENT_ID:latest,FACEBOOK_CLIENT_SECRET=FACEBOOK_CLIENT_SECRET:latest'
+      - 'DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GITHUB_CLIENT_ID=GITHUB_CLIENT_ID:latest,GITHUB_CLIENT_SECRET=GITHUB_CLIENT_SECRET:latest'
       - '--set-env-vars'
       - 'NODE_ENV=production,NEXTAUTH_URL=https://${_SERVICE_NAME}-${PROJECT_NUMBER}.${_REGION}.run.app'
 
