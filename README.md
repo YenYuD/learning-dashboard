@@ -140,7 +140,3 @@ Deployed on **Google Cloud Run** via Cloud Build:
 3. Secrets managed via GCP Secret Manager
 
 GitHub Actions CI runs lint + typecheck on every push/PR — must pass before merging to `main`.
-
-## License
-
-MIT
