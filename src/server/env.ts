@@ -12,12 +12,16 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().url(),
 });
 
+// Skip validation during Docker build (no runtime env vars available yet)
+const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
+
 const _env = envSchema.safeParse(process.env);
 
-if (!_env.success) {
+if (!_env.success && !isBuilding) {
   throw new Error(
     '❌ Invalid environment variables: ' +
       JSON.stringify(_env.error.format(), null, 4),
   );
 }
-export const env = _env.data;
+
+export const env = (_env.success ? _env.data : process.env) as z.infer<typeof envSchema>;
