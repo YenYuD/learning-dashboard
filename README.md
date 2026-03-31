@@ -1,194 +1,146 @@
-# 📊 Learning & Growth Dashboard
+# Learning & Growth Dashboard
 
-> A personal growth management system combining task management and time tracking for multi-goal learners.
+A personal growth management system combining task management and time tracking for multi-goal learners.
 
-## 🎯 Project Overview
+## Tech Stack
 
-This full-stack web application helps users manage multiple learning goals simultaneously (e.g., language learning, programming practice, sports training) with integrated task boards and time tracking.
-
-**Tech Stack:**
-- **Frontend:** Next.js 14 (Pages Router) + React 19 + TypeScript
+- **Framework:** Next.js 15 (App Router) + React 19 + TypeScript
 - **Backend:** tRPC v11 (end-to-end type safety)
 - **Database:** PostgreSQL + Prisma ORM
-- **Styling:** TailwindCSS
-- **State Management:** React Query (via tRPC)
-- **Testing:** Playwright (E2E)
+- **Auth:** NextAuth.js (Google, GitHub, Facebook, Credentials)
+- **UI:** TailwindCSS + shadcn/ui
+- **Drag & Drop:** @dnd-kit
+- **Charts:** Recharts
+- **Forms:** React Hook Form + Zod
+- **Testing:** Vitest + Playwright
+- **CI/CD:** GitHub Actions (lint/typecheck) + Google Cloud Build (deploy to Cloud Run)
 
-## 🚀 Getting Started
+## Features
+
+- **Board System** — Task-based boards (with lists & cards) and time-only boards (for skill tracking)
+- **Drag & Drop** — Reorder lists and tasks across columns with @dnd-kit
+- **Time Tracking** — Built-in timer and manual entry, linked to boards or tasks
+- **Dashboard** — Weekly/monthly stats, daily trend charts, board breakdown, calendar heatmap
+- **Authentication** — Multi-provider OAuth (Google, GitHub, Facebook) + email/password registration
+- **Templates** — Pre-configured board templates (Language Learning, Programming, Fitness, Custom)
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.0.0 or higher
-- PostgreSQL database (local or cloud)
-- npm or pnpm package manager
+- Node.js 22+
+- pnpm
+- PostgreSQL database
 
 ### Installation
 
-1. **Clone the repository**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/YenYuD/learning-dashboard.git
 cd learning-dashboard
+pnpm install
 ```
 
-2. **Install dependencies**
-```bash
-npm install
-```
+### Environment Variables
 
-3. **Set up environment variables**
 ```bash
-# Copy the example env file
-cp .env.example .env
-
-# Edit .env and set your DATABASE_URL
-# For local PostgreSQL:
+# Database
 DATABASE_URL=postgresql://postgres:@localhost:5432/learning-dashboard
 
-# For Supabase or other cloud providers, update accordingly
+# NextAuth
+NEXTAUTH_SECRET=your-secret
+NEXTAUTH_URL=http://localhost:3000
+
+# OAuth providers (optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+FACEBOOK_CLIENT_ID=
+FACEBOOK_CLIENT_SECRET=
 ```
 
-4. **Set up the database**
-```bash
-# Run migrations
-npm run migrate-dev
-
-# (Optional) Seed the database with example data
-npm run db-seed
-```
-
-5. **Start the development server**
-```bash
-# Start Next.js dev server and Prisma Studio
-npm run dx
-
-# Or just the Next.js server
-npm run dev
-```
-
-6. **Open the application**
-- Application: http://localhost:3000
-- Prisma Studio: http://localhost:5555
-
-## 📜 Available Scripts
-
-- `npm run dev` - Start Next.js development server
-- `npm run dx` - Start dev server + Prisma Studio + run migrations
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run prisma-studio` - Open Prisma Studio (database GUI)
-- `npm run migrate-dev` - Run database migrations
-- `npm run db-seed` - Seed database with example data
-- `npm run test-e2e` - Run end-to-end tests with Playwright
-
-## 🏗️ Project Structure
-
-```
-learning-dashboard/
-├── src/
-│   ├── pages/              # Next.js pages (Pages Router)
-│   │   ├── index.tsx       # Home page
-│   │   ├── _app.tsx        # App wrapper with tRPC provider
-│   │   └── api/
-│   │       └── trpc/       # tRPC API endpoints
-│   ├── server/
-│   │   ├── routers/        # tRPC routers
-│   │   │   ├── _app.ts     # Root router
-│   │   │   └── post.ts     # Example router (to be replaced)
-│   │   ├── context.ts      # tRPC context
-│   │   ├── prisma.ts       # Prisma client
-│   │   └── trpc.ts         # tRPC setup
-│   ├── components/         # React components
-│   └── utils/              # Utility functions
-├── prisma/
-│   ├── schema.prisma       # Database schema
-│   ├── seed.ts             # Database seeding script
-│   └── migrations/         # Database migrations
-├── public/                 # Static assets
-└── package.json
-```
-
-## 🗄️ Database Schema (Current)
-
-The starter includes a simple `Post` model. This will be replaced with the Learning Dashboard schema:
-
-**Planned Models:**
-- `Board` - Learning/activity boards (e.g., "English Learning", "Skiing")
-- `List` - Task columns within boards (e.g., "To Do", "In Progress")
-- `Task` - Individual tasks within lists
-- `TimeEntry` - Time tracking records
-
-See `CLAUDE.md` for detailed schema design.
-
-## 🔑 Key Features (Planned)
-
-### Phase 1: MVP
-- [ ] Board management (Task-based and Time-only types)
-- [ ] Template-based board creation
-- [ ] Task management with drag-and-drop
-- [ ] Dual-mode time tracking (Timer + Manual entry)
-- [ ] Dashboard with statistics and charts
-- [ ] Responsive design (desktop-first, mobile-friendly)
-
-### Phase 2: Enhancements
-- [ ] Authentication (NextAuth.js + Google OAuth)
-- [ ] Streak tracking
-- [ ] Goal setting
-- [ ] Dark mode
-- [ ] Data export
-
-## 🧪 Testing
+### Database Setup
 
 ```bash
-# Run end-to-end tests
-npm run test-e2e
-
-# Run unit tests (when implemented)
-npm run test-unit
+pnpm migrate-dev    # Run migrations
+pnpm db-seed        # Seed example data
 ```
 
-## 🚢 Deployment
+### Development
 
-### Recommended Stack:
-- **Frontend + API:** Vercel
-- **Database:** Supabase (free tier) or Vercel Postgres
+```bash
+pnpm dev             # Start dev server + run migrations + seed
+pnpm prisma-studio   # Open database GUI at localhost:5555
+```
 
-### Deploy to Vercel:
+Open http://localhost:3000
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Set environment variables:
-   - `DATABASE_URL`
-4. Deploy!
+## Scripts
 
-Vercel will automatically run `npm run build` which includes database migrations.
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Production build |
+| `pnpm start` | Start production server |
+| `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Run TypeScript type check |
+| `pnpm test-unit` | Run unit tests (Vitest) |
+| `pnpm test-e2e` | Run E2E tests (Playwright) |
+| `pnpm migrate-dev` | Run database migrations |
+| `pnpm db-seed` | Seed database |
+| `pnpm prisma-studio` | Open Prisma Studio |
 
-## 📚 Documentation
+## Project Structure
 
-- [Product Specification](./03-Learning-Dashboard-產品規格書.md) - Full product requirements (Chinese)
-- [Design Brief](./05-設計需求文件-Design-Brief.md) - UI/UX design specifications (Chinese)
-- [AI Design Tools Guide](./06-AI設計工具使用指南.md) - Guide for using AI design tools (Chinese)
-- [CLAUDE.md](./CLAUDE.md) - Technical guidance for Claude Code
+```
+src/
+├── app/
+│   ├── (app)/              # Authenticated routes
+│   │   ├── dashboard/      # Dashboard with stats & charts
+│   │   ├── board/[boardId] # Board detail page
+│   │   └── timer/          # Timer page
+│   ├── (auth)/             # Auth routes (login, register)
+│   └── api/
+│       ├── trpc/           # tRPC API handler
+│       └── auth/           # NextAuth + registration endpoints
+├── server/
+│   ├── routers/            # tRPC routers (board, list, task, timeEntries, analytics)
+│   ├── context.ts
+│   └── trpc.ts
+├── components/
+│   ├── board/              # Board, list, task, drag-and-drop components
+│   ├── dashboard/          # Charts and stats components
+│   ├── dialogs/            # Modals (create board/list/task, settings)
+│   ├── auth/               # User menu
+│   ├── layout/             # Sidebar
+│   └── ui/                 # shadcn/ui components
+├── hooks/
+├── lib/
+└── types/
+prisma/
+├── schema.prisma
+├── seed.ts
+└── migrations/
+```
 
-## 🔗 Technology References
+## Database Schema
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [tRPC Documentation](https://trpc.io/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [TailwindCSS Documentation](https://tailwindcss.com/docs)
+- **User** — Auth accounts with multi-provider support
+- **Board** — `TASK_BASED` (lists + tasks) or `TIME_ONLY` (time tracking only)
+- **List** — Columns within task-based boards (ordered)
+- **Task** — Cards within lists (ordered, draggable)
+- **TimeEntry** — Duration records linked to boards and optionally to tasks
 
-## 🤝 Contributing
+## Deployment
 
-This is a portfolio project for job interview preparation. Contributions are welcome!
+Deployed on **Google Cloud Run** via Cloud Build:
 
-## 📝 License
+1. Push to `main` triggers Cloud Build
+2. Builds Docker image → pushes to Artifact Registry → deploys to Cloud Run
+3. Secrets managed via GCP Secret Manager
+
+GitHub Actions CI runs lint + typecheck on every push/PR — must pass before merging to `main`.
+
+## License
 
 MIT
-
-## 👤 Author
-
-Built as a portfolio project to demonstrate full-stack development skills with modern TypeScript technologies.
-
----
-
-**Last Updated:** March 2026
