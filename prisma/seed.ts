@@ -50,6 +50,9 @@ async function main() {
   });
   console.log(`✅ Demo user created/updated: ${demoUser.email}`);
 
+  // Clear existing boards to avoid duplicates on re-seed
+  await prisma.board.deleteMany({ where: { user_id: 'user-demo' } });
+
   // Create sample boards
   const englishBoard = await prisma.board.create({
     data: {

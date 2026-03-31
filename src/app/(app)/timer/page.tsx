@@ -2,7 +2,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { ArrowLeft, Play, Pause, Square, Plus, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
@@ -48,7 +48,7 @@ function getStartOfMonth(date: Date): Date {
   return d;
 }
 
-export default function TaskTimerPage() {
+function TaskTimerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const taskId = searchParams.get('taskId') ?? '';
@@ -78,7 +78,7 @@ export default function TaskTimerPage() {
     onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
   });
 
-  const timeEntries = task?.timeEntries ?? [];
+  const timeEntries = useMemo(() => task?.timeEntries ?? [], [task?.timeEntries]);
 
   const { weeklyHours, monthlyHours } = useMemo(() => {
     const now = new Date();
@@ -321,5 +321,13 @@ export default function TaskTimerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TaskTimerPage() {
+  return (
+    <Suspense>
+      <TaskTimerContent />
+    </Suspense>
   );
 }
