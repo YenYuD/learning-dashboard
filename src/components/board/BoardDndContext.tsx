@@ -106,12 +106,11 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
     // For task dragging: first try pointer-within for accurate column detection
     const pointerIntersections = pointerWithin(args);
     const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
-    let overId = getFirstCollision(intersections, 'id');
+    const overId = getFirstCollision(intersections, 'id');
 
     if (overId != null) {
-      lastOverIdRef.current = overId as string;
-      // If hovering over a list drop zone, find the closest task within it
-      const overIdStr = overId as string;
+      lastOverIdRef.current = String(overId);
+      const overIdStr = String(overId);
       const targetListId = overIdStr.startsWith('list-drop-')
         ? overIdStr.replace('list-drop-', '')
         : listIds.includes(overIdStr) ? overIdStr : null;
@@ -176,16 +175,16 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
 
     setLists((prev) => {
       const activeListInPrev = prev.find((l) => l.id === activeList.id)!;
-      const overListInPrev = prev.find((l) => l.id === overList!.id)!;
+      const overListInPrev = prev.find((l) => l.id === overList?.id);
       const task = activeListInPrev.tasks.find((t) => t.id === activeTaskId);
       if (!task) return prev;
 
       const activeIndex = activeListInPrev.tasks.findIndex((t) => t.id === activeTaskId);
 
-      if (activeList.id === overList!.id) {
+      if (activeList.id === overList?.id) {
         // Same-list reorder — give immediate visual feedback
         if (!overTaskId) return prev;
-        const overIndex = overListInPrev.tasks.findIndex((t) => t.id === overTaskId);
+        const overIndex = overListInPrev?.tasks.findIndex((t) => t.id === overTaskId) ?? -1;
         if (overIndex === -1 || activeIndex === overIndex) return prev;
         return prev.map((l) =>
           l.id === activeList.id
@@ -195,17 +194,17 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
       } else {
         // Cross-list move
         const overIndex = overTaskId
-          ? overListInPrev.tasks.findIndex((t) => t.id === overTaskId)
+          ? overListInPrev?.tasks.findIndex((t) => t.id === overTaskId) ?? -1
           : -1;
-        const insertIndex = overIndex >= 0 ? overIndex : overListInPrev.tasks.length;
+        const insertIndex = overIndex >= 0 ? overIndex : overListInPrev?.tasks.length ?? 0;
 
         return prev.map((l) => {
           if (l.id === activeList.id) {
             return { ...l, tasks: l.tasks.filter((t) => t.id !== activeTaskId) };
           }
-          if (l.id === overList!.id) {
+          if (l.id === overList?.id) {
             const newTasks = [...l.tasks];
-            newTasks.splice(insertIndex, 0, { ...task, listId: overList!.id });
+            newTasks.splice(insertIndex, 0, { ...task, listId: overList.id });
             return { ...l, tasks: newTasks };
           }
           return l;

@@ -91,7 +91,7 @@ export function DailyTrendChart({ timeRange }: DailyTrendChartProps) {
                   borderRadius: '6px',
                   fontSize: 12,
                 }}
-                formatter={(value) => [`${value}h`, '學習時數']}
+                formatter={(value) => [`${String(value)}h`, '學習時數']}
               />
               <Area
                 type="monotone"

@@ -52,7 +52,7 @@ interface TimeOnlyBoardProps {
   boardName?: string;
 }
 
-export function TimeOnlyBoard({ boardId, boardName }: TimeOnlyBoardProps) {
+export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardProps) {
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,9 +81,8 @@ export function TimeOnlyBoard({ boardId, boardName }: TimeOnlyBoardProps) {
     },
   });
 
-  const timeEntries = boardQuery.data?.timeEntries ?? [];
+  const timeEntries = useMemo(() => boardQuery.data?.timeEntries ?? [], [boardQuery.data?.timeEntries]);
 
-  // Compute weekly and monthly totals from time entries
   const { weeklyHours, monthlyHours } = useMemo(() => {
     const now = new Date();
     const weekStart = getStartOfWeek(now);

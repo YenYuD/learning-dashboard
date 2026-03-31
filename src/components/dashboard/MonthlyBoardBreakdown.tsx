@@ -23,10 +23,6 @@ export function MonthlyBoardBreakdown() {
 
   const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month });
 
-  const maxMinutes = useMemo(() => {
-    if (!data?.length) return 1;
-    return Math.max(...data.map((d) => d.minutes));
-  }, [data]);
 
   const totalMinutes = useMemo(
     () => (data ?? []).reduce((sum, b) => sum + b.minutes, 0),

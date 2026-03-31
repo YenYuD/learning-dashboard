@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '~/components/ui/button';
 import { CreateTaskModal } from '~/components/dialogs/CreateTaskModal';
 
 interface ListOption {
