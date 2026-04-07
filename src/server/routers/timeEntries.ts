@@ -1,6 +1,7 @@
 import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { checkMilestoneAndNotify, checkRankingChangeAndNotify } from './notification.service';
 
 export const timeEntriesRouter = router({
   create: protectedProcedure
@@ -21,10 +22,8 @@ export const timeEntriesRouter = router({
         select: { name: true },
       });
 
-      import('./notification.service').then(({ checkMilestoneAndNotify, checkRankingChangeAndNotify }) => {
-        checkMilestoneAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
-        checkRankingChangeAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
-      });
+      checkMilestoneAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
+      checkRankingChangeAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
 
       return entry;
     }),

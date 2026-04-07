@@ -26,12 +26,12 @@ export default function FriendsPage() {
     <div className="py-10 px-12 flex flex-col gap-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-medium tracking-tight">Friends</h1>
+        <h1 className="text-4xl font-medium tracking-tight">好友</h1>
         <InviteLinkDialog
           trigger={
             <Button>
               <UserPlus size={16} className="mr-2" />
-              Invite Friend
+              邀請好友
             </Button>
           }
         />
@@ -45,7 +45,7 @@ export default function FriendsPage() {
           }`}
           onClick={() => setTab('all')}
         >
-          All Friends
+          所有好友
         </button>
         <button
           className={`rounded px-3 py-1.5 text-sm font-medium ${
@@ -53,7 +53,7 @@ export default function FriendsPage() {
           }`}
           onClick={() => setTab('pending')}
         >
-          Pending ({pendingCount})
+          待處理 ({pendingCount})
         </button>
       </div>
 

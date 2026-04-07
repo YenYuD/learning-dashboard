@@ -1,4 +1,6 @@
 import { prisma } from '~/server/prisma';
+import { env } from '~/server/env';
+import { getAcceptedFriendIds } from '~/server/utils/friend';
 
 interface NotificationPayload {
   title: string;
@@ -6,19 +8,26 @@ interface NotificationPayload {
   url?: string;
 }
 
-/** 動態載入 web-push（避免在不需要推播的環境中產生錯誤） */
+/** Cached web-push instance */
+let webPushInstance: typeof import('web-push') | null | undefined;
+
+/** 動態載入 web-push（避免在不需要推播的環境中產生錯誤），快取初始化結果 */
 async function getWebPush() {
-  const webPush = await import('web-push');
-  const publicKey = process.env.VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const email = process.env.VAPID_EMAIL;
+  if (webPushInstance !== undefined) return webPushInstance;
+
+  const publicKey = env.VAPID_PUBLIC_KEY;
+  const privateKey = env.VAPID_PRIVATE_KEY;
+  const email = env.VAPID_EMAIL;
 
   if (!publicKey || !privateKey || !email) {
     console.warn('[notification] VAPID keys not configured, skipping push');
+    webPushInstance = null;
     return null;
   }
 
+  const webPush = await import('web-push');
   webPush.setVapidDetails(email, publicKey, privateKey);
+  webPushInstance = webPush;
   return webPush;
 }
 
@@ -84,7 +93,6 @@ export async function checkMilestoneAndNotify(userId: string, userName: string |
   const hours = crossedThreshold / 60;
   const displayName = userName ?? 'Someone';
 
-  const { getAcceptedFriendIds } = await import('./friend');
   const friendIds = await getAcceptedFriendIds(userId);
 
   if (friendIds.length === 0) return;
@@ -98,7 +106,6 @@ export async function checkMilestoneAndNotify(userId: string, userName: string |
 
 /** 檢查排名變動並通知被超越者 */
 export async function checkRankingChangeAndNotify(userId: string, userName: string | null, addedMinutes: number) {
-  const { getAcceptedFriendIds } = await import('./friend');
   const friendIds = await getAcceptedFriendIds(userId);
   if (friendIds.length === 0) return;
 

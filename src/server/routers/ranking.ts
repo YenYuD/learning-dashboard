@@ -1,8 +1,8 @@
 import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
-import { getAcceptedFriendIds } from './friend';
-import { calculateStreak } from '~/server/utils/streak';
+import { getAcceptedFriendIds } from '~/server/utils/friend';
+import { calculateStreak, calculateStreaksForUsers } from '~/server/utils/streak';
 
 /** 取得時間範圍起始日 */
 function getTimeRangeStart(timeRange: 'week' | 'month'): Date {
@@ -74,12 +74,11 @@ export const rankingRouter = router({
         entries = allUserIds.map((uid) => ({ userId: uid, value: userMinutes.get(uid) ?? 0 }));
 
       } else if (input.dimension === 'streak') {
-        entries = await Promise.all(
-          allUserIds.map(async (uid) => ({
-            userId: uid,
-            value: await calculateStreak(uid),
-          })),
-        );
+        const streakMap = await calculateStreaksForUsers(allUserIds);
+        entries = allUserIds.map((uid) => ({
+          userId: uid,
+          value: streakMap.get(uid) ?? 0,
+        }));
 
       } else {
         const since = getTimeRangeStart(input.timeRange);
