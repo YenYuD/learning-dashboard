@@ -45,6 +45,12 @@ Core entities:
 - `Task` - Individual task cards within lists
 - `TimeEntry` - Time tracking records (linked to boards/tasks)
 
+## Git Branching Rules
+
+- **Never commit implementation code directly to `develop` or `main` branches.** Always create a feature branch (e.g., `feat/xxx`, `fix/xxx`) for any code changes.
+- `develop` and `main` are protected — only docs, config, and merge commits belong there.
+- Create a PR to merge feature branches into `develop`.
+
 ## Development Workflow
 
 ### Initial Setup (when implementing)
@@ -307,3 +313,26 @@ When implementing Phase 2:
 - **Optimistic Updates**: Implement optimistic UI updates for drag-and-drop and timer actions
 - **Error Boundaries**: Wrap major UI sections in error boundaries
 - **Loading States**: Use skeleton screens instead of spinners for better UX
+
+
+Add under a new ## Prisma / Database section\n\nWhen fixing Prisma migration checksum mismatches, skip `migrate resolve` and directly update the checksum in the `_prisma_migrations` table, or use `migrate reset` if data loss is acceptable.
+Add under ## UI / Frontend section\n\nAlways reference the design spec/mockup files for exact color values, component positions, and layout — never infer from planning docs or previous implementations.
+Add under ## Deployment / Configuration section\n\nAfter completing implementation tasks, verify all required environment variables (NEXTAUTH_SECRET, NEXTAUTH_URL, DATABASE_URL, etc.) are set before marking tasks as done.
+Add at the top under ## Tech Stack section\n\nThis project uses TypeScript, Next.js, Prisma, tRPC, pnpm, and Tailwind CSS. When suggesting Tailwind syntax, use v3 conventions (e.g., `data-[active]:` for data attributes). Use Zod v3 API unless explicitly told otherwise.
+Add under ## Debugging Guidelines section\n\nWhen debugging issues, check the code and database state directly first — avoid generic troubleshooting suggestions (clear cookies, check redirect URIs) unless code inspection is inconclusive.
+
+
+I have design mockups for my learning dashboard app. I want you to:
+
+1. Read the design spec at docs/design-spec.md and all mockup references
+2. Create a TodoWrite plan breaking the UI into independent component tasks (e.g., AppShell, Dashboard charts, Task Board, modals)
+3. For EACH component task, autonomously:
+   a. Read the current implementation
+   b. Compare against the design spec for colors, spacing, layout, typography
+   c. Make all necessary changes across files (components, CSS, types)
+   d. Run `pnpm build` to verify no type/build errors
+   e. Document exact color values and spacing used vs. spec
+4. After all tasks, do a final cross-component consistency check
+5. Commit each completed component separately with descriptive messages
+
+IMPORTANT: Use the design spec as the source of truth for colors—not planning docs. Place components exactly where the mockup shows them. If a Tailwind data attribute doesn't work, check the exact syntax for our Radix/base-ui version before guessing.
