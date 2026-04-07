@@ -9,6 +9,8 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Learning & Growth Dashboard',
   description: 'Personal growth management system with task management and time tracking',
+  manifest: '/manifest.json',
+  themeColor: '#E42313',
 };
 
 export default function RootLayout({
