@@ -29,20 +29,27 @@ export function usePushSubscription() {
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications not supported');
-      return false;
+      throw new Error('Push notifications are not supported in this browser');
+    }
+
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey) {
+      throw new Error('Push notifications are not configured (missing VAPID key)');
     }
 
     const perm = await Notification.requestPermission();
     setPermission(perm);
-    if (perm !== 'granted') return false;
+    if (perm !== 'granted') {
+      throw new Error('Notification permission was denied');
+    }
+
+    // Check if a service worker is registered (next-pwa disables SW in dev)
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    if (registrations.length === 0) {
+      throw new Error('Service worker not available. Push notifications require a production build.');
+    }
 
     const registration = await navigator.serviceWorker.ready;
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) {
-      console.warn('VAPID public key not configured');
-      return false;
-    }
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -50,10 +57,15 @@ export function usePushSubscription() {
     });
 
     const json = subscription.toJSON();
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+      throw new Error('Push subscription is missing required fields');
+    }
+
     await subscribeMutation.mutateAsync({
-      endpoint: json.endpoint!,
-      p256dh: json.keys?.p256dh ?? '',
-      auth: json.keys?.auth ?? '',
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
     await utils.notification.status.invalidate();
@@ -71,13 +83,16 @@ export function usePushSubscription() {
   }, [unsubscribeMutation, utils]);
 
   const toggle = useCallback(async (enabled: boolean) => {
-    if (enabled && permission === 'default') {
-      await subscribe();
-      return;
+    if (enabled) {
+      // If no subscription exists yet (first time or permission already granted), subscribe first
+      if (!statusQuery.data?.deviceCount) {
+        await subscribe();
+        return;
+      }
     }
     await toggleMutation.mutateAsync({ enabled });
     await utils.notification.status.invalidate();
-  }, [permission, subscribe, toggleMutation, utils]);
+  }, [statusQuery.data?.deviceCount, subscribe, toggleMutation, utils]);
 
   return {
     permission,

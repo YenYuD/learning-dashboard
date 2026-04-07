@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '~/server/prisma';
 import { sendPushToUser } from '~/server/routers/notification.service';
 
+/** 根據用戶的 timezone 取得「今天零時」對應的 UTC 時間 */
+function getTodayStartForTimezone(timezone: string | null): Date {
+  const tz = timezone ?? 'UTC';
+  // Get "today" date string in the user's timezone (YYYY-MM-DD format)
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  // Parse as midnight UTC, then adjust by timezone offset
+  // Approach: create a date formatter that tells us the offset
+  const nowUtc = new Date();
+  const inTz = new Date(nowUtc.toLocaleString('en-US', { timeZone: tz }));
+  const offsetMs = inTz.getTime() - nowUtc.getTime();
+
+  const [year, month, day] = todayStr.split('-').map(Number);
+  // Midnight in user's TZ = that date at 00:00 local = UTC minus the offset
+  return new Date(Date.UTC(year, month - 1, day) - offsetMs);
+}
+
 export async function POST(req: NextRequest) {
   // Verify request source
   const cronSecret = process.env.CRON_SECRET;
@@ -10,35 +26,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
-
-  // Find all users with active push subscriptions
+  // Find all users with active push subscriptions, including their timezone
   const activeSubscribers = await prisma.pushSubscription.findMany({
     where: { enabled: true },
-    select: { userId: true },
+    select: { userId: true, user: { select: { timezone: true } } },
     distinct: ['userId'],
   });
 
-  const userIds = activeSubscribers.map((s) => s.userId);
-  if (userIds.length === 0) {
+  if (activeSubscribers.length === 0) {
     return NextResponse.json({ sent: 0 });
   }
 
-  // Find users who have studied today
-  const activeToday = await prisma.timeEntry.findMany({
-    where: {
-      board: { user_id: { in: userIds } },
-      createdAt: { gte: todayStart },
-    },
-    select: { board: { select: { user_id: true } } },
-    distinct: ['boardId'],
-  });
+  // Check each user's activity based on their local "today"
+  const inactiveUserIds: string[] = [];
 
-  const activeTodayIds = new Set(activeToday.map((e) => e.board.user_id));
+  for (const sub of activeSubscribers) {
+    const todayStart = getTodayStartForTimezone(sub.user.timezone);
+    const hasActivity = await prisma.timeEntry.findFirst({
+      where: {
+        board: { user_id: sub.userId },
+        createdAt: { gte: todayStart },
+      },
+      select: { id: true },
+    });
 
-  // Only send reminders to users who haven't studied today
-  const inactiveUserIds = userIds.filter((uid) => !activeTodayIds.has(uid));
+    if (!hasActivity) {
+      inactiveUserIds.push(sub.userId);
+    }
+  }
 
   const results = await Promise.allSettled(
     inactiveUserIds.map((uid) =>

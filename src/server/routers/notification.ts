@@ -9,6 +9,7 @@ export const notificationRouter = router({
       endpoint: z.string(),
       p256dh: z.string(),
       auth: z.string(),
+      timezone: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await prisma.pushSubscription.upsert({
@@ -23,6 +24,15 @@ export const notificationRouter = router({
           auth: input.auth,
         },
       });
+
+      // Persist user timezone for timezone-aware features (e.g., daily reminders)
+      if (input.timezone) {
+        await prisma.user.update({
+          where: { id: ctx.userId },
+          data: { timezone: input.timezone },
+        });
+      }
+
       return { success: true };
     }),
 

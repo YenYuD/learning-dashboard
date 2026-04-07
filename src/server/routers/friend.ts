@@ -90,24 +90,32 @@ export const friendRouter = router({
 
         const status = input.action === 'accept' ? 'ACCEPTED' : 'DECLINED';
 
-        await prisma.$transaction([
-          existing
-            ? prisma.friendship.update({
-                where: { id: existing.id },
-                data: { status },
-              })
-            : prisma.friendship.create({
-                data: {
-                  requesterId: invite.inviterId,
-                  addresseeId: ctx.userId,
-                  status,
-                },
-              }),
-          prisma.friendInvite.update({
-            where: { id: invite.id },
+        await prisma.$transaction(async (tx) => {
+          // Atomically claim the invite — only one user can succeed
+          const claimed = await tx.friendInvite.updateMany({
+            where: { id: invite.id, usedById: null },
             data: { usedById: ctx.userId, usedAt: new Date() },
-          }),
-        ]);
+          });
+
+          if (claimed.count === 0) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: '此連結已被使用' });
+          }
+
+          if (existing) {
+            await tx.friendship.update({
+              where: { id: existing.id },
+              data: { status },
+            });
+          } else {
+            await tx.friendship.create({
+              data: {
+                requesterId: invite.inviterId,
+                addresseeId: ctx.userId,
+                status,
+              },
+            });
+          }
+        });
 
         return { status };
       }),

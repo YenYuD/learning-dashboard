@@ -29,6 +29,7 @@ model User {
   receivedRequests  Friendship[]       @relation("ReceivedRequests")
   friendInvites     FriendInvite[]
   pushSubscriptions PushSubscription[]
+  timezone          String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }

@@ -15,19 +15,6 @@ function getTimeRangeStart(timeRange: 'week' | 'month'): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-/** 計算用戶在時間範圍內完成的任務數 */
-async function countCompletedTasks(userId: string, since: Date): Promise<number> {
-  return prisma.task.count({
-    where: {
-      list: {
-        board: { user_id: userId },
-        name: { in: ['Done', 'done', 'Complete', 'complete', 'Completed', 'completed'] },
-      },
-      updatedAt: { gte: since },
-    },
-  });
-}
-
 export const rankingRouter = router({
   /** 取得排行榜 */
   leaderboard: protectedProcedure
@@ -82,12 +69,32 @@ export const rankingRouter = router({
 
       } else {
         const since = getTimeRangeStart(input.timeRange);
-        entries = await Promise.all(
-          allUserIds.map(async (uid) => ({
-            userId: uid,
-            value: await countCompletedTasks(uid, since),
-          })),
-        );
+        const taskCounts = await prisma.task.groupBy({
+          by: ['listId'],
+          where: {
+            list: {
+              board: { user_id: { in: allUserIds } },
+              name: { in: ['Done', 'done', 'Complete', 'complete', 'Completed', 'completed'] },
+            },
+            updatedAt: { gte: since },
+          },
+          _count: true,
+        });
+
+        const lists = await prisma.list.findMany({
+          where: { id: { in: taskCounts.map((t) => t.listId) } },
+          select: { id: true, board: { select: { user_id: true } } },
+        });
+        const listUserMap = new Map(lists.map((l) => [l.id, l.board.user_id]));
+
+        const userTaskCount = new Map<string, number>();
+        for (const uid of allUserIds) userTaskCount.set(uid, 0);
+        for (const tc of taskCounts) {
+          const uid = listUserMap.get(tc.listId);
+          if (uid) userTaskCount.set(uid, (userTaskCount.get(uid) ?? 0) + tc._count);
+        }
+
+        entries = allUserIds.map((uid) => ({ userId: uid, value: userTaskCount.get(uid) ?? 0 }));
       }
 
       // 排序（降序）並加上名次（dense ranking）
@@ -122,7 +129,15 @@ export const rankingRouter = router({
         _sum: { duration: true },
       }),
       calculateStreak(ctx.userId),
-      countCompletedTasks(ctx.userId, weekStart),
+      prisma.task.count({
+        where: {
+          list: {
+            board: { user_id: ctx.userId },
+            name: { in: ['Done', 'done', 'Complete', 'complete', 'Completed', 'completed'] },
+          },
+          updatedAt: { gte: weekStart },
+        },
+      }),
     ]);
 
     return {
