@@ -78,8 +78,8 @@ export default function FriendsPage() {
               <PendingInviteCard
                 key={pending.id}
                 requester={pending.requester}
-                onAccept={() => {}}
-                onDecline={() => {}}
+                onAccept={() => { /* TODO */ }}
+                onDecline={() => { /* TODO */ }}
               />
             ))
           )}

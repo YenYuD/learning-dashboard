@@ -52,8 +52,8 @@ export function usePushSubscription() {
     const json = subscription.toJSON();
     await subscribeMutation.mutateAsync({
       endpoint: json.endpoint!,
-      p256dh: json.keys!.p256dh!,
-      auth: json.keys!.auth!,
+      p256dh: json.keys?.p256dh ?? '',
+      auth: json.keys?.auth ?? '',
     });
 
     await utils.notification.status.invalidate();
