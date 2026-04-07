@@ -16,17 +16,21 @@ enum BoardType {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  accounts      Account[]
-  sessions      Session[]
-  boards        Board[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String             @id @default(cuid())
+  name              String?
+  email             String?            @unique
+  emailVerified     DateTime?
+  image             String?
+  password          String?
+  accounts          Account[]
+  sessions          Session[]
+  boards            Board[]
+  sentRequests      Friendship[]       @relation("SentRequests")
+  receivedRequests  Friendship[]       @relation("ReceivedRequests")
+  friendInvites     FriendInvite[]
+  pushSubscriptions PushSubscription[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Account {
@@ -119,4 +123,50 @@ model TimeEntry {
   updatedAt DateTime  @default(now()) @updatedAt
   @@index([boardId])
   @@index([taskId])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  requester   User             @relation("SentRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("ReceivedRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+}
+
+model FriendInvite {
+  id        String    @id @default(uuid())
+  token     String    @unique @default(uuid())
+  inviterId String
+  inviter   User      @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  usedById  String?
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @db.Text
+  p256dh    String
+  auth      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, endpoint])
 }
