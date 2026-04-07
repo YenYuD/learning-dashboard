@@ -304,6 +304,17 @@ When implementing Phase 2:
 - Need schema changes? Always run `prisma migrate dev --name <description>` to create a **new** migration
 - Seed data (demo users, sample boards) belongs in `prisma/seed.ts`, NOT in migration SQL files
 - Need to add data alongside a schema change? Add it to `seed.ts` and run `prisma db seed`
+- When fixing Prisma migration checksum mismatches, skip `migrate resolve` and directly update the checksum in the `_prisma_migrations` table, or use `migrate reset` if data loss is acceptable
+
+### Migration 檔案必須隨 schema 變更一起 commit
+
+**每次修改 `prisma/schema.prisma` 並執行 `prisma migrate dev` 後，產生的 `prisma/migrations/<timestamp>_<name>/migration.sql` 必須在同一個 commit 中一起提交。** 這是反覆發生的問題：migration 在資料庫已套用但檔案未 commit，導致其他環境或分支 `prisma migrate dev` 報 drift 錯誤。
+
+具體規則：
+- 執行 `prisma migrate dev --name xxx` 後，立即用 `git add prisma/migrations/` 將新產生的 migration 目錄加入 staging
+- Commit 時務必確認 `prisma/migrations/` 下的新檔案已包含在內
+- 在 commit 前跑 `git status` 檢查是否有 untracked 的 migration 檔案
+- **絕對不要** 只 commit `schema.prisma` 而漏掉對應的 migration SQL
 
 ## Important Notes
 
@@ -315,24 +326,16 @@ When implementing Phase 2:
 - **Loading States**: Use skeleton screens instead of spinners for better UX
 
 
-Add under a new ## Prisma / Database section\n\nWhen fixing Prisma migration checksum mismatches, skip `migrate resolve` and directly update the checksum in the `_prisma_migrations` table, or use `migrate reset` if data loss is acceptable.
-Add under ## UI / Frontend section\n\nAlways reference the design spec/mockup files for exact color values, component positions, and layout — never infer from planning docs or previous implementations.
-Add under ## Deployment / Configuration section\n\nAfter completing implementation tasks, verify all required environment variables (NEXTAUTH_SECRET, NEXTAUTH_URL, DATABASE_URL, etc.) are set before marking tasks as done.
-Add at the top under ## Tech Stack section\n\nThis project uses TypeScript, Next.js, Prisma, tRPC, pnpm, and Tailwind CSS. When suggesting Tailwind syntax, use v3 conventions (e.g., `data-[active]:` for data attributes). Use Zod v3 API unless explicitly told otherwise.
-Add under ## Debugging Guidelines section\n\nWhen debugging issues, check the code and database state directly first — avoid generic troubleshooting suggestions (clear cookies, check redirect URIs) unless code inspection is inconclusive.
+## UI / Frontend
 
+- Always reference the design spec/mockup files for exact color values, component positions, and layout — never infer from planning docs or previous implementations
+- When suggesting Tailwind syntax, use v3 conventions (e.g., `data-[active]:` for data attributes)
+- Use Zod v3 API unless explicitly told otherwise
 
-I have design mockups for my learning dashboard app. I want you to:
+## Deployment / Configuration
 
-1. Read the design spec at docs/design-spec.md and all mockup references
-2. Create a TodoWrite plan breaking the UI into independent component tasks (e.g., AppShell, Dashboard charts, Task Board, modals)
-3. For EACH component task, autonomously:
-   a. Read the current implementation
-   b. Compare against the design spec for colors, spacing, layout, typography
-   c. Make all necessary changes across files (components, CSS, types)
-   d. Run `pnpm build` to verify no type/build errors
-   e. Document exact color values and spacing used vs. spec
-4. After all tasks, do a final cross-component consistency check
-5. Commit each completed component separately with descriptive messages
+- After completing implementation tasks, verify all required environment variables (NEXTAUTH_SECRET, NEXTAUTH_URL, DATABASE_URL, etc.) are set before marking tasks as done
 
-IMPORTANT: Use the design spec as the source of truth for colors—not planning docs. Place components exactly where the mockup shows them. If a Tailwind data attribute doesn't work, check the exact syntax for our Radix/base-ui version before guessing.
+## Debugging Guidelines
+
+- When debugging issues, check the code and database state directly first — avoid generic troubleshooting suggestions (clear cookies, check redirect URIs) unless code inspection is inconclusive
