@@ -8,6 +8,9 @@ import { listRouter } from './list';
 import { taskRouter } from './task';
 import { analyticsRouter } from './analytics';
 import { friendRouter } from './friend';
+import { rankingRouter } from './ranking';
+import { friendStatsRouter } from './friendStats';
+import { notificationRouter } from './notification';
 
 export const appRouter = router({
   healthcheck: publicProcedure.query(() => 'Learning Dashboard API is running!'),
@@ -18,6 +21,9 @@ export const appRouter = router({
   task: taskRouter,
   analytics: analyticsRouter,
   friend: friendRouter,
+  ranking: rankingRouter,
+  friendStats: friendStatsRouter,
+  notification: notificationRouter,
 });
 
 export const createCaller = createCallerFactory(appRouter);
