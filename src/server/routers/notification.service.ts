@@ -63,7 +63,7 @@ export async function sendPushToUsers(userIds: string[], payload: NotificationPa
 const MILESTONE_THRESHOLDS = [300, 600, 1200, 3000];
 
 /** 檢查用戶是否跨越里程碑，並通知好友 */
-export async function checkMilestoneAndNotify(userId: string, userName: string | null) {
+export async function checkMilestoneAndNotify(userId: string, userName: string | null, addedMinutes: number) {
   const now = new Date();
   const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   weekStart.setUTCDate(weekStart.getUTCDate() - ((weekStart.getUTCDay() + 6) % 7));
@@ -73,9 +73,10 @@ export async function checkMilestoneAndNotify(userId: string, userName: string |
     _sum: { duration: true },
   });
   const totalMinutes = agg._sum.duration ?? 0;
+  const previousMinutes = totalMinutes - addedMinutes;
 
   const crossedThreshold = MILESTONE_THRESHOLDS.find((threshold) => {
-    return totalMinutes >= threshold && totalMinutes < threshold + 60;
+    return previousMinutes < threshold && totalMinutes >= threshold;
   });
 
   if (!crossedThreshold) return;
@@ -96,7 +97,7 @@ export async function checkMilestoneAndNotify(userId: string, userName: string |
 }
 
 /** 檢查排名變動並通知被超越者 */
-export async function checkRankingChangeAndNotify(userId: string, userName: string | null) {
+export async function checkRankingChangeAndNotify(userId: string, userName: string | null, addedMinutes: number) {
   const { getAcceptedFriendIds } = await import('./friend');
   const friendIds = await getAcceptedFriendIds(userId);
   if (friendIds.length === 0) return;
@@ -133,7 +134,8 @@ export async function checkRankingChangeAndNotify(userId: string, userName: stri
     const overtakenMinutes = sorted[myIndex + 1][1];
     const myMinutes = userMinutes.get(userId) ?? 0;
 
-    if (myMinutes - overtakenMinutes < 60 && myMinutes > overtakenMinutes) {
+    const previousMinutes = myMinutes - addedMinutes;
+    if (previousMinutes <= overtakenMinutes && myMinutes > overtakenMinutes) {
       const displayName = userName ?? 'Someone';
       await sendPushToUser(overtakenUserId, {
         title: 'Ranking Change',

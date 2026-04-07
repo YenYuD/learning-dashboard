@@ -2,6 +2,7 @@ import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 import { getAcceptedFriendIds } from './friend';
+import { calculateStreak } from '~/server/utils/streak';
 
 /** 取得時間範圍起始日 */
 function getTimeRangeStart(timeRange: 'week' | 'month'): Date {
@@ -12,34 +13,6 @@ function getTimeRangeStart(timeRange: 'week' | 'month'): Date {
     return d;
   }
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
-/** 計算用戶的連續學習天數（streak） */
-async function calculateStreak(userId: string): Promise<number> {
-  const entries = await prisma.timeEntry.findMany({
-    where: { board: { user_id: userId } },
-    select: { createdAt: true },
-  });
-
-  const dateSet = new Set(
-    entries.map((e) => {
-      const d = new Date(e.createdAt);
-      return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-    }),
-  );
-
-  let streak = 0;
-  const cursor = new Date();
-  cursor.setUTCHours(0, 0, 0, 0);
-
-  while (true) {
-    const key = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
-    if (!dateSet.has(key)) break;
-    streak++;
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
-  }
-
-  return streak;
 }
 
 /** 計算用戶在時間範圍內完成的任務數 */

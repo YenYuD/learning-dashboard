@@ -22,8 +22,8 @@ export const timeEntriesRouter = router({
       });
 
       import('./notification.service').then(({ checkMilestoneAndNotify, checkRankingChangeAndNotify }) => {
-        checkMilestoneAndNotify(ctx.userId, user?.name ?? null).catch(console.error);
-        checkRankingChangeAndNotify(ctx.userId, user?.name ?? null).catch(console.error);
+        checkMilestoneAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
+        checkRankingChangeAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
       });
 
       return entry;

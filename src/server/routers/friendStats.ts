@@ -2,6 +2,7 @@ import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { prisma } from '~/server/prisma';
+import { calculateStreakFromDates } from '~/server/utils/streak';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -64,19 +65,7 @@ export const friendStatsRouter = router({
       ]);
 
       // Streak 計算
-      const dateSet = new Set(
-        streakEntries.map((e) => {
-          const d = new Date(e.createdAt);
-          return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-        }),
-      );
-      let streak = 0;
-      const cursor = new Date();
-      cursor.setUTCHours(0, 0, 0, 0);
-      while (dateSet.has(`${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`)) {
-        streak++;
-        cursor.setUTCDate(cursor.getUTCDate() - 1);
-      }
+      const streak = calculateStreakFromDates(streakEntries.map((e) => e.createdAt));
 
       return {
         name: user.name,

@@ -172,6 +172,34 @@ export const friendRouter = router({
     }));
   }),
 
+  /** 接受或拒絕好友邀請 */
+  respond: protectedProcedure
+    .input(z.object({
+      friendshipId: z.string(),
+      action: z.enum(['accept', 'decline']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          id: input.friendshipId,
+          addresseeId: ctx.userId,
+          status: 'PENDING',
+        },
+      });
+      if (!friendship) throw new TRPCError({ code: 'NOT_FOUND', message: '找不到該好友邀請' });
+
+      if (input.action === 'accept') {
+        await prisma.friendship.update({
+          where: { id: input.friendshipId },
+          data: { status: 'ACCEPTED' },
+        });
+      } else {
+        await prisma.friendship.delete({ where: { id: input.friendshipId } });
+      }
+
+      return { success: true };
+    }),
+
   /** 移除好友 */
   remove: protectedProcedure
     .input(z.object({ friendshipId: z.string() }))

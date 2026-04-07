@@ -12,6 +12,13 @@ export default function FriendsPage() {
   const [tab, setTab] = useState<'all' | 'pending'>('all');
   const friendsQuery = trpc.friend.list.useQuery();
   const pendingQuery = trpc.friend.pending.useQuery();
+  const utils = trpc.useUtils();
+  const respondMutation = trpc.friend.respond.useMutation({
+    onSuccess: () => {
+      void utils.friend.pending.invalidate();
+      void utils.friend.list.invalidate();
+    },
+  });
 
   const pendingCount = pendingQuery.data?.length ?? 0;
 
@@ -78,8 +85,9 @@ export default function FriendsPage() {
               <PendingInviteCard
                 key={pending.id}
                 requester={pending.requester}
-                onAccept={() => { /* TODO */ }}
-                onDecline={() => { /* TODO */ }}
+                isPending={respondMutation.isPending}
+                onAccept={() => respondMutation.mutate({ friendshipId: pending.id, action: 'accept' })}
+                onDecline={() => respondMutation.mutate({ friendshipId: pending.id, action: 'decline' })}
               />
             ))
           )}
