@@ -17,6 +17,6 @@ export const config = {
      * - /api/trpc/* (tRPC handles its own auth via protectedProcedure)
      * - _next/static, _next/image, favicon, static assets
      */
-    '/((?!login|register|api/auth|api/trpc|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!login|register|invite|api/auth|api/trpc|api/cron|_next/static|_next/image|favicon.ico|manifest.json|custom-sw.js|icon-.*\\.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

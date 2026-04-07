@@ -12,8 +12,21 @@ export const timeEntriesRouter = router({
       endTime: z.date().optional(),
       note: z.string().optional(),
     }))
-    .mutation(({ input }) => {
-      return prisma.timeEntry.create({ data: input });
+    .mutation(async ({ ctx, input }) => {
+      const entry = await prisma.timeEntry.create({ data: input });
+
+      // Fire-and-forget: async notification hooks, don't block response
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { name: true },
+      });
+
+      import('./notification.service').then(({ checkMilestoneAndNotify, checkRankingChangeAndNotify }) => {
+        checkMilestoneAndNotify(ctx.userId, user?.name ?? null).catch(console.error);
+        checkRankingChangeAndNotify(ctx.userId, user?.name ?? null).catch(console.error);
+      });
+
+      return entry;
     }),
 
   update: protectedProcedure
