@@ -32,7 +32,7 @@ export default function RankingPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="py-10 px-12 flex flex-col gap-8">
       <h1 className="text-4xl font-medium tracking-tight">Ranking</h1>
 
       {/* Controls */}

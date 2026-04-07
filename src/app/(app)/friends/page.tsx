@@ -16,7 +16,7 @@ export default function FriendsPage() {
   const pendingCount = pendingQuery.data?.length ?? 0;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="py-10 px-12 flex flex-col gap-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-medium tracking-tight">Friends</h1>

@@ -35,13 +35,13 @@ export function InviteLinkDialog({ trigger }: { trigger: React.ReactElement }) {
         <p className="text-sm text-muted-foreground">
           Share this link with your friend. The link expires in 7 days and can only be used once.
         </p>
-        <div className="flex gap-2">
-          <div className="flex-1 rounded-md border px-3 py-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex-1 rounded-md border px-3 py-2 min-w-0">
             <p className="truncate text-sm text-muted-foreground">
               {link ?? 'Generating...'}
             </p>
           </div>
-          <Button onClick={handleCopy} disabled={!link}>
+          <Button className="shrink-0" onClick={handleCopy} disabled={!link}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
           </Button>

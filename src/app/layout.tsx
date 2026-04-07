@@ -1,5 +1,5 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import { TRPCReactProvider } from '~/utils/trpc-provider';
 import { SessionProvider } from '~/components/providers/SessionProvider';
@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'Learning & Growth Dashboard',
   description: 'Personal growth management system with task management and time tracking',
   manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
   themeColor: '#E42313',
 };
 
