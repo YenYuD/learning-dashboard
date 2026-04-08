@@ -87,7 +87,7 @@ function TaskTimerContent() {
     let weeklyMinutes = 0;
     let monthlyMinutes = 0;
     for (const entry of timeEntries) {
-      const d = new Date(entry.createdAt);
+      const d = new Date(entry.startTime ?? entry.createdAt);
       if (d >= monthStart) monthlyMinutes += entry.duration;
       if (d >= weekStart) weeklyMinutes += entry.duration;
     }
@@ -297,7 +297,7 @@ function TaskTimerContent() {
                 <div className="flex items-center gap-3 text-sm">
                   <Calendar size={14} className="text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleDateString()}
+                    {new Date(entry.startTime ?? entry.createdAt).toLocaleDateString()}
                   </span>
                   <span className="font-medium">{formatDuration(entry.duration)}</span>
                 </div>
