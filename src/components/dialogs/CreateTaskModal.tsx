@@ -12,6 +12,7 @@ import {
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface ListOption {
   id: string;
@@ -59,6 +60,9 @@ export function CreateTaskModal({
       utils.board.byId.invalidate({ id: boardId });
       reset();
       onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('建立任務失敗', { description: error.message });
     },
   });
 
