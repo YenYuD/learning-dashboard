@@ -1,7 +1,7 @@
 // src/components/board/TaskCard.tsx
 'use client';
 
-import { Clock, MoreHorizontal, Play } from 'lucide-react';
+import { Clock, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface TaskCardProps {
@@ -53,8 +53,7 @@ export function TaskCard({
           router.push(`/timer?taskId=${taskId}&boardId=${boardId}`);
         }}
       >
-        <Play size={14} fill="white" />
-        開始計時
+        Select Task
       </button>
       <MoreHorizontal
         size={16}

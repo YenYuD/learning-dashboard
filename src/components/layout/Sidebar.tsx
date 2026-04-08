@@ -24,11 +24,13 @@ export function Sidebar() {
     <>
       <aside className="flex h-full w-60 flex-col bg-sidebar text-sidebar-foreground">
         {/* Logo */}
-        <div className="flex h-14 items-center gap-3 px-4 border-b border-sidebar-border">
-          <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
-          <span className="text-lg font-semibold text-sidebar-foreground">
-            Learning
-          </span>
+        <div className="flex h-14 items-center border-b border-sidebar-border">
+          <Link href="/dashboard" className="flex items-center gap-3 px-4 h-full">
+            <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
+            <span className="text-lg font-semibold text-sidebar-foreground">
+              Learning
+            </span>
+          </Link>
         </div>
 
         {/* Nav */}

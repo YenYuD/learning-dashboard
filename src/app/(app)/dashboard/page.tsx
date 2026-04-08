@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   return (
-    <div className="py-10 px-12 space-y-6">
+    <div className="md:py-10 md:px-12 py-4 px-6 space-y-6">
       <DashboardContent />
     </div>
   );

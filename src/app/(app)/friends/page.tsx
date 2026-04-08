@@ -23,7 +23,7 @@ export default function FriendsPage() {
   const pendingCount = pendingQuery.data?.length ?? 0;
 
   return (
-    <div className="py-10 px-12 flex flex-col gap-8">
+    <div className="md:py-10 md:px-12 py-4 px-6 flex flex-col gap-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-medium tracking-tight">好友</h1>
@@ -40,17 +40,15 @@ export default function FriendsPage() {
       {/* Tabs */}
       <div className="flex gap-2">
         <button
-          className={`rounded px-3 py-1.5 text-sm font-medium ${
-            tab === 'all' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-          }`}
+          className={`rounded px-3 py-1.5 text-sm font-medium ${tab === 'all' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+            }`}
           onClick={() => setTab('all')}
         >
           所有好友
         </button>
         <button
-          className={`rounded px-3 py-1.5 text-sm font-medium ${
-            tab === 'pending' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-          }`}
+          className={`rounded px-3 py-1.5 text-sm font-medium ${tab === 'pending' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+            }`}
           onClick={() => setTab('pending')}
         >
           待處理 ({pendingCount})

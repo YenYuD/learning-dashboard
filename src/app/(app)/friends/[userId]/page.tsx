@@ -40,7 +40,7 @@ export default function FriendStatsPage() {
   }
 
   return (
-    <div className="py-10 px-12 flex flex-col gap-8">
+    <div className="md:py-10 md:px-12 py-4 px-6 flex flex-col gap-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground">
