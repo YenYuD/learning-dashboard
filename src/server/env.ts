@@ -19,7 +19,9 @@ const envSchema = z.object({
 });
 
 // Skip validation during Docker build (no runtime env vars available yet)
-const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
+const isBuilding =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.SKIP_ENV_VALIDATION === '1';
 
 const _env = envSchema.safeParse(process.env);
 
