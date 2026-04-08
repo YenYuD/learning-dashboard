@@ -74,7 +74,11 @@ export const rankingRouter = router({
           where: {
             list: {
               board: { user_id: { in: allUserIds } },
-              name: { in: ['Done', 'done', 'Complete', 'complete', 'Completed', 'completed'] },
+              OR: [
+                { name: { equals: 'done', mode: 'insensitive' } },
+                { name: { equals: 'complete', mode: 'insensitive' } },
+                { name: { equals: 'completed', mode: 'insensitive' } },
+              ],
             },
             updatedAt: { gte: since },
           },

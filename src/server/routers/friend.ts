@@ -189,7 +189,7 @@ export const friendRouter = router({
           data: { status: 'ACCEPTED' },
         });
       } else {
-        await prisma.friendship.delete({ where: { id: input.friendshipId } });
+        await prisma.friendship.update({ where: { id: input.friendshipId }, data: { status: 'DECLINED' } });
       }
 
       return { success: true };

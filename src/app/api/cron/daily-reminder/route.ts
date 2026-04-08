@@ -6,13 +6,23 @@ import { sendPushToUser } from '~/server/routers/notification.service';
 function getTodayStartForTimezone(timezone: string | null): Date {
   const tz = timezone ?? 'UTC';
   try {
-    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-    const nowUtc = new Date();
-    const inTz = new Date(nowUtc.toLocaleString('en-US', { timeZone: tz }));
-    const offsetMs = inTz.getTime() - nowUtc.getTime();
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    }).formatToParts(now);
 
-    const [year, month, day] = todayStr.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day) - offsetMs);
+    const get = (type: string) =>
+      parseInt(parts.find((p) => p.type === type)?.value ?? '0');
+
+    // Seconds elapsed since midnight in the user's timezone
+    const elapsedSec = get('hour') * 3600 + get('minute') * 60 + get('second');
+
+    // Subtract elapsed time from now to approximate midnight UTC equivalent
+    return new Date(Math.floor((now.getTime() - elapsedSec * 1000) / 1000) * 1000);
   } catch {
     // Invalid timezone — fall back to UTC
     const d = new Date();
