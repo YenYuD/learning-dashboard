@@ -12,7 +12,7 @@ interface PendingInviteCardProps {
 
 export function PendingInviteCard({ requester, onAccept, onDecline, isPending }: PendingInviteCardProps) {
   return (
-    <div className="flex items-center gap-4 px-6 py-4">
+    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4">
       {requester.image ? (
         <img src={requester.image} alt="" className="h-10 w-10 rounded-full object-cover" />
       ) : (

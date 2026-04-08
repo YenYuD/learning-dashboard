@@ -15,7 +15,7 @@ export function AddListButton({ boardId }: AddListButtonProps) {
 
   return (
     <>
-      <div className="flex w-72 shrink-0 items-start pt-0.5">
+      <div className="flex w-64 md:w-72 shrink-0 items-start pt-0.5">
         <Button
           variant="outline"
           className="w-full justify-start gap-2 bg-muted/40 hover:bg-muted border-dashed"

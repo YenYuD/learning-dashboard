@@ -86,7 +86,7 @@ export function ListColumn({ listId, boardId, title, tasks, allLists }: ListColu
 
   return (
     <>
-      <div className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60">
+      <div className="flex w-64 md:w-72 shrink-0 flex-col rounded-lg bg-muted/60">
         {/* List header */}
         <div className="flex items-center justify-between px-3 py-2.5">
           {isRenaming ? (

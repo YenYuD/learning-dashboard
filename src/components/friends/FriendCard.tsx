@@ -20,8 +20,8 @@ export function FriendCard({ friendshipId, id, name, image, weeklyInfo }: Friend
   });
 
   return (
-    <div className="flex items-center gap-4 px-6 py-4">
-      <Link href={`/friends/${id}`} className="flex flex-1 items-center gap-4">
+    <div className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4">
+      <Link href={`/friends/${id}`} className="flex flex-1 items-center gap-3 md:gap-4 min-w-0">
         {image ? (
           <img src={image} alt="" className="h-10 w-10 rounded-full object-cover" />
         ) : (
