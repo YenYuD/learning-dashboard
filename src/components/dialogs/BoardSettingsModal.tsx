@@ -15,6 +15,7 @@ import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
 import { BOARD_COLORS } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface BoardSettingsModalProps {
   open: boolean;
@@ -44,10 +45,12 @@ export function BoardSettingsModal({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: board.id });
       utils.board.list.invalidate();
-      // Board color/name changes affect all analytics charts — invalidate them too
       utils.analytics.weeklyByBoard.invalidate();
       utils.analytics.boardDistribution.invalidate();
       onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('更新 Board 失敗', { description: error.message });
     },
   });
 
@@ -56,6 +59,9 @@ export function BoardSettingsModal({
       utils.board.list.invalidate();
       onOpenChange(false);
       router.push('/dashboard');
+    },
+    onError: (error) => {
+      toast.error('刪除 Board 失敗', { description: error.message });
     },
   });
 
