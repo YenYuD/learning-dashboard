@@ -17,6 +17,7 @@ import {
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -48,6 +49,43 @@ function getStartOfMonth(date: Date): Date {
   return d;
 }
 
+const TIMER_STORAGE_KEY = 'learning-dashboard-timer';
+
+interface TimerState {
+  elapsed: number;
+  running: boolean;
+  startTime: string | null;
+  boardId: string;
+  taskId: string;
+  lastSavedAt: string;
+}
+
+function saveTimerState(state: TimerState) {
+  try {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+function loadTimerState(): TimerState | null {
+  try {
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TimerState;
+  } catch {
+    return null;
+  }
+}
+
+function clearTimerState() {
+  try {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch {
+    // silent
+  }
+}
+
 function TaskTimerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -58,6 +96,7 @@ function TaskTimerContent() {
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const initializedRef = useRef(false);
 
   const [manualOpen, setManualOpen] = useState(false);
   const [manualHours, setManualHours] = useState(0);
@@ -72,10 +111,22 @@ function TaskTimerContent() {
   );
 
   const createEntry = trpc.timeEntries.create.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      toast.success('時間記錄已儲存');
+    },
+    onError: (error) => {
+      toast.error('儲存失敗', { description: error.message });
+    },
   });
   const deleteEntry = trpc.timeEntries.delete.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      toast.success('記錄已刪除');
+    },
+    onError: (error) => {
+      toast.error('刪除失敗', { description: error.message });
+    },
   });
 
   const timeEntries = useMemo(() => task?.timeEntries ?? [], [task?.timeEntries]);
@@ -97,14 +148,78 @@ function TaskTimerContent() {
     };
   }, [timeEntries]);
 
+  // Restore timer state from localStorage on mount
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const saved = loadTimerState();
+    if (!saved) return;
+    if (saved.boardId !== boardId || saved.taskId !== taskId) return;
+
+    if (saved.running && saved.startTime) {
+      const startMs = new Date(saved.startTime).getTime();
+      const realElapsed = Math.floor((Date.now() - startMs) / 1000);
+      setElapsed(realElapsed);
+      setRunning(true);
+      startTimeRef.current = new Date(saved.startTime);
+    } else if (saved.elapsed > 0) {
+      setElapsed(saved.elapsed);
+      startTimeRef.current = saved.startTime ? new Date(saved.startTime) : null;
+    }
+  }, [boardId, taskId]);
+
   useEffect(() => {
     if (running) {
-      intervalRef.current = setInterval(() => setElapsed((p) => p + 1), 1000);
+      intervalRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          const realElapsed = Math.floor(
+            (Date.now() - startTimeRef.current.getTime()) / 1000,
+          );
+          setElapsed(realElapsed);
+        } else {
+          setElapsed((p) => p + 1);
+        }
+      }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [running]);
+
+  // Persist timer state to localStorage whenever it changes
+  useEffect(() => {
+    if (!initializedRef.current) return;
+
+    if (elapsed === 0 && !running) {
+      clearTimerState();
+      return;
+    }
+
+    saveTimerState({
+      elapsed,
+      running,
+      startTime: startTimeRef.current?.toISOString() ?? null,
+      boardId,
+      taskId,
+      lastSavedAt: new Date().toISOString(),
+    });
+  }, [elapsed, running, boardId, taskId]);
+
+  // Warn before closing/refreshing browser when timer is active
+  useEffect(() => {
+    const hasActiveTimer = running || elapsed > 0;
+    if (!hasActiveTimer) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [running, elapsed]);
 
   const handlePlayPause = () => {
     if (!running && elapsed === 0) startTimeRef.current = new Date();
@@ -125,6 +240,7 @@ function TaskTimerContent() {
     setRunning(false);
     setElapsed(0);
     startTimeRef.current = null;
+    clearTimerState();
   };
 
   const handleManualSubmit = () => {
@@ -153,7 +269,15 @@ function TaskTimerContent() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(`/board/${boardId}`)}
+          onClick={() => {
+            if (
+              (running || elapsed > 0) &&
+              !window.confirm('您有未儲存的計時紀錄，確定要離開嗎？')
+            ) {
+              return;
+            }
+            router.push(`/board/${boardId}`);
+          }}
         >
           <ArrowLeft size={18} />
         </Button>

@@ -12,6 +12,7 @@ import {
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface CreateListModalProps {
   open: boolean;
@@ -40,6 +41,9 @@ export function CreateListModal({ open, onOpenChange, boardId }: CreateListModal
       utils.board.byId.invalidate({ id: boardId });
       reset();
       onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('建立清單失敗', { description: error.message });
     },
   });
 

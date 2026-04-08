@@ -16,6 +16,7 @@ import { IconPicker } from '~/components/ui/icon-picker';
 import { cn } from '~/lib/utils';
 import { BOARD_COLORS } from '~/lib/constants';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 import { ListChecks, Timer } from 'lucide-react';
 
 type BoardType = 'TASK_BASED' | 'TIME_ONLY';
@@ -78,6 +79,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
       if (context?.previous) {
         utils.board.list.setData(undefined, context.previous);
       }
+      toast.error('建立 Board 失敗', { description: _err.message });
     },
     onSuccess: (newBoard) => {
       // 立即將 optimistic ID 替換成真實 ID，避免 Sidebar 連結仍指向不存在的 ID

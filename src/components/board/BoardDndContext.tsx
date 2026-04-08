@@ -26,6 +26,7 @@ import { SortableListColumn } from './SortableListColumn';
 import { AddListButton } from './AddListButton';
 import { TaskCard } from './TaskCard';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface Task {
   id: string;
@@ -64,6 +65,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
     onError: () => {
       isDirtyRef.current = false;
       setLists(initialLists);
+      toast.error('排序更新失敗，已自動恢復');
     },
   });
 
@@ -75,6 +77,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
     onError: () => {
       isDirtyRef.current = false;
       setLists(initialLists);
+      toast.error('排序更新失敗，已自動恢復');
     },
   });
 
