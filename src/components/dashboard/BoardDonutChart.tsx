@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import type { TimeRange } from '~/app/(app)/dashboard/page';
+import type { TimeRange } from './DashboardContent';
 
 const TITLES: Record<TimeRange, string> = {
   today: '今日時間佔比',

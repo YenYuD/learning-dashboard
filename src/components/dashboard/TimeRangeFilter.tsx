@@ -2,7 +2,7 @@
 'use client';
 
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import type { TimeRange } from '~/app/(app)/dashboard/page';
+import type { TimeRange } from './DashboardContent';
 
 interface TimeRangeFilterProps {
   value: TimeRange;
