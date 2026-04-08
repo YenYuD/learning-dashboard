@@ -92,7 +92,7 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     let monthlyMinutes = 0;
 
     for (const entry of timeEntries) {
-      const entryDate = new Date(entry.createdAt);
+      const entryDate = new Date(entry.startTime ?? entry.createdAt);
       if (entryDate >= monthStart) {
         monthlyMinutes += entry.duration;
       }
@@ -314,7 +314,7 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
               <div className="flex items-center gap-3 text-sm">
                 <Calendar size={14} className="text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  {new Date(entry.createdAt).toLocaleDateString()}
+                  {new Date(entry.startTime ?? entry.createdAt).toLocaleDateString()}
                 </span>
                 <span className="text-sm font-medium">
                   {formatDuration(entry.duration)}

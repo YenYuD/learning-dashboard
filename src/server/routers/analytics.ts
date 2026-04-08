@@ -9,6 +9,11 @@ import { prisma } from '~/server/prisma';
 // 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
 const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
 
+/** Return the "effective date" of a time entry: startTime if set, otherwise createdAt. */
+function effectiveDate(entry: { startTime: Date | null; createdAt: Date }): Date {
+  return entry.startTime ?? entry.createdAt;
+}
+
 export const analyticsRouter = router({
   /** Dashboard summary: today / week / month / year totals + streak */
   summary: protectedProcedure
@@ -40,58 +45,35 @@ export const analyticsRouter = router({
 
       const userFilter = { board: { user_id: ctx.userId } };
 
-      const [
-        todayAgg,
-        yesterdayAgg,
-        weekAgg,
-        lastWeekAgg,
-        monthAgg,
-        lastMonthAgg,
-        yearAgg,
-        streakEntries,
-      ] = await prisma.$transaction([
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: todayStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: yesterdayStart, lt: todayStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: weekStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: lastWeekStart, lt: weekStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: monthStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: lastMonthStart, lt: monthStart } },
-          _sum: { duration: true },
-        }),
-        prisma.timeEntry.aggregate({
-          where: { ...userFilter, createdAt: { gte: yearStart } },
-          _sum: { duration: true },
-        }),
-        // Fetch all entry dates for streak calculation (select only createdAt)
-        prisma.timeEntry.findMany({
-          where: userFilter,
-          select: { createdAt: true },
-        }),
-      ]);
+      // Fetch all entries from the start of the year (covers all needed ranges)
+      // and use effectiveDate (startTime ?? createdAt) for bucketing.
+      const allEntries = await prisma.timeEntry.findMany({
+        where: { ...userFilter, OR: [
+          { startTime: { gte: yearStart } },
+          { startTime: null, createdAt: { gte: yearStart } },
+        ] },
+        select: { duration: true, startTime: true, createdAt: true },
+      });
 
-      // Build a Set of UTC date keys "YYYY-M-D" for O(1) lookup
-      const dateSet = new Set(
-        streakEntries.map((e) => {
-          const d = new Date(e.createdAt);
-          return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-        }),
-      );
+      let todayMin = 0, yesterdayMin = 0, weekMin = 0, lastWeekMin = 0;
+      let monthMin = 0, lastMonthMin = 0, yearMin = 0;
+      const dateSet = new Set<string>();
+
+      for (const entry of allEntries) {
+        const d = effectiveDate(entry);
+        const dur = entry.duration;
+
+        // streak date set
+        dateSet.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`);
+
+        yearMin += dur;
+        if (d >= todayStart) todayMin += dur;
+        else if (d >= yesterdayStart) yesterdayMin += dur;
+        if (d >= weekStart) weekMin += dur;
+        else if (d >= lastWeekStart) lastWeekMin += dur;
+        if (d >= monthStart) monthMin += dur;
+        else if (d >= lastMonthStart) lastMonthMin += dur;
+      }
 
       // Count consecutive days backwards from today
       let streak = 0;
@@ -104,10 +86,10 @@ export const analyticsRouter = router({
       }
 
       return {
-        today:  { minutes: todayAgg._sum.duration  ?? 0, prevMinutes: yesterdayAgg._sum.duration ?? 0 },
-        week:   { minutes: weekAgg._sum.duration   ?? 0, prevMinutes: lastWeekAgg._sum.duration  ?? 0 },
-        month:  { minutes: monthAgg._sum.duration  ?? 0, prevMinutes: lastMonthAgg._sum.duration ?? 0 },
-        year:   { minutes: yearAgg._sum.duration   ?? 0 },
+        today:  { minutes: todayMin,  prevMinutes: yesterdayMin },
+        week:   { minutes: weekMin,   prevMinutes: lastWeekMin },
+        month:  { minutes: monthMin,  prevMinutes: lastMonthMin },
+        year:   { minutes: yearMin },
         streak,
       };
     }),
@@ -151,7 +133,10 @@ export const analyticsRouter = router({
       const entries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
-          createdAt: { gte: startDate },
+          OR: [
+            { startTime: { gte: startDate } },
+            { startTime: null, createdAt: { gte: startDate } },
+          ],
         },
         include: { board: { select: { name: true, color: true } } },
       });
@@ -159,7 +144,7 @@ export const analyticsRouter = router({
       const result = labels.map((day) => ({ day }) as Record<string, string | number>);
 
       for (const entry of entries) {
-        const index = getDayIndex(new Date(entry.createdAt));
+        const index = getDayIndex(effectiveDate(entry));
         if (index >= 0 && index < labels.length) {
           const boardName = entry.board.name;
           const current = (result[index][boardName] as number) || 0;
@@ -184,18 +169,30 @@ export const analyticsRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = {
+      const baseFilter: Record<string, unknown> = {
         board: { user_id: ctx.userId },
       };
       if (input.since) {
-        where.createdAt = { gte: input.since };
+        baseFilter.OR = [
+          { startTime: { gte: input.since } },
+          { startTime: null, createdAt: { gte: input.since } },
+        ];
       }
 
-      const entries = await prisma.timeEntry.groupBy({
-        by: ['boardId'],
-        where,
-        _sum: { duration: true },
+      const rawEntries = await prisma.timeEntry.findMany({
+        where: baseFilter,
+        select: { boardId: true, duration: true },
       });
+
+      const grouped = new Map<string, number>();
+      for (const e of rawEntries) {
+        grouped.set(e.boardId, (grouped.get(e.boardId) ?? 0) + e.duration);
+      }
+
+      const entries = Array.from(grouped.entries()).map(([boardId, sum]) => ({
+        boardId,
+        _sum: { duration: sum },
+      }));
 
       const boards = await prisma.board.findMany({
         where: { user_id: ctx.userId },
@@ -231,14 +228,17 @@ export const analyticsRouter = router({
       const entries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
-          createdAt: { gte: monthStart, lt: monthEnd },
+          OR: [
+            { startTime: { gte: monthStart, lt: monthEnd } },
+            { startTime: null, createdAt: { gte: monthStart, lt: monthEnd } },
+          ],
         },
-        select: { duration: true, createdAt: true },
+        select: { duration: true, startTime: true, createdAt: true },
       });
 
       const buckets = new Map<number, number>();
       for (const entry of entries) {
-        const day = new Date(entry.createdAt).getUTCDate();
+        const day = effectiveDate(entry).getUTCDate();
         buckets.set(day, (buckets.get(day) ?? 0) + entry.duration);
       }
 
@@ -255,14 +255,27 @@ export const analyticsRouter = router({
       const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
       const monthEnd   = new Date(Date.UTC(input.year, input.month,     1));
 
-      const entries = await prisma.timeEntry.groupBy({
-        by: ['boardId'],
+      // Cannot use groupBy with COALESCE, so fetch + group manually
+      const rawEntries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
-          createdAt: { gte: monthStart, lt: monthEnd },
+          OR: [
+            { startTime: { gte: monthStart, lt: monthEnd } },
+            { startTime: null, createdAt: { gte: monthStart, lt: monthEnd } },
+          ],
         },
-        _sum: { duration: true },
+        select: { boardId: true, duration: true, startTime: true, createdAt: true },
       });
+
+      const grouped = new Map<string, number>();
+      for (const e of rawEntries) {
+        grouped.set(e.boardId, (grouped.get(e.boardId) ?? 0) + e.duration);
+      }
+
+      const entries = Array.from(grouped.entries()).map(([boardId, sum]) => ({
+        boardId,
+        _sum: { duration: sum },
+      }));
 
       const boards = await prisma.board.findMany({
         where: { id: { in: entries.map((e) => e.boardId) } },
@@ -299,15 +312,18 @@ export const analyticsRouter = router({
       const entries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
-          createdAt: { gte: startDate },
+          OR: [
+            { startTime: { gte: startDate } },
+            { startTime: null, createdAt: { gte: startDate } },
+          ],
         },
-        select: { duration: true, createdAt: true },
+        select: { duration: true, startTime: true, createdAt: true },
       });
 
       // Bucket by day
       const buckets = new Map<string, number>();
       for (const entry of entries) {
-        const d = new Date(entry.createdAt);
+        const d = effectiveDate(entry);
         const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
         buckets.set(key, (buckets.get(key) ?? 0) + entry.duration);
       }
