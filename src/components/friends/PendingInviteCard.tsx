@@ -24,10 +24,10 @@ export function PendingInviteCard({ requester, onAccept, onDecline, isPending }:
         <p className="text-xs text-muted-foreground">想成為你的好友</p>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" disabled={isPending} onClick={onDecline}>
+        <Button size="sm" variant="outline" aria-label="拒絕邀請" disabled={isPending} onClick={onDecline}>
           <X size={14} />
         </Button>
-        <Button size="sm" disabled={isPending} onClick={onAccept}>
+        <Button size="sm" aria-label="接受邀請" disabled={isPending} onClick={onAccept}>
           <Check size={14} />
         </Button>
       </div>

@@ -124,6 +124,7 @@ export function SortableListColumn({ listId, boardId, title, tasks, allLists }: 
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
+              aria-label="清單選單"
               className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent hover:text-accent-foreground"
               onPointerDown={(e) => e.stopPropagation()}
             >

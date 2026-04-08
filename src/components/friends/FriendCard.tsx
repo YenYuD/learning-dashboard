@@ -38,6 +38,7 @@ export function FriendCard({ friendshipId, id, name, image, weeklyInfo }: Friend
       <Button
         variant="ghost"
         size="sm"
+        aria-label="好友選項"
         className="text-muted-foreground"
         onClick={() => {
           if (confirm('確定要移除此好友嗎？')) {
