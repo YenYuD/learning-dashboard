@@ -71,6 +71,16 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
   // tRPC queries and mutations
   const utils = trpc.useUtils();
   const boardQuery = trpc.board.byId.useQuery({ id: boardId });
+
+  const invalidateAnalytics = () => {
+    utils.analytics.summary.invalidate();
+    utils.analytics.weeklyByBoard.invalidate();
+    utils.analytics.boardDistribution.invalidate();
+    utils.analytics.dailyTrend.invalidate();
+    utils.analytics.monthlyCalendar.invalidate();
+    utils.analytics.monthlyBoardBreakdown.invalidate();
+  };
+
   const createEntry = trpc.timeEntries.create.useMutation({
     onMutate: async (input) => {
       await utils.board.byId.cancel({ id: boardId });
@@ -107,6 +117,7 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     },
     onSettled: () => {
       utils.board.byId.invalidate({ id: boardId });
+      invalidateAnalytics();
     },
     onSuccess: () => {
       toast.success('時間記錄已儲存');
@@ -133,6 +144,7 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     },
     onSettled: () => {
       utils.board.byId.invalidate({ id: boardId });
+      invalidateAnalytics();
     },
     onSuccess: () => {
       toast.success('記錄已刪除');

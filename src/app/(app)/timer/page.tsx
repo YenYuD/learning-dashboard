@@ -110,9 +110,19 @@ function TaskTimerContent() {
     { enabled: !!taskId },
   );
 
+  const invalidateAnalytics = () => {
+    utils.analytics.summary.invalidate();
+    utils.analytics.weeklyByBoard.invalidate();
+    utils.analytics.boardDistribution.invalidate();
+    utils.analytics.dailyTrend.invalidate();
+    utils.analytics.monthlyCalendar.invalidate();
+    utils.analytics.monthlyBoardBreakdown.invalidate();
+  };
+
   const createEntry = trpc.timeEntries.create.useMutation({
     onSuccess: () => {
       utils.task.byId.invalidate({ id: taskId });
+      invalidateAnalytics();
       toast.success('時間記錄已儲存');
     },
     onError: (error) => {
@@ -122,6 +132,7 @@ function TaskTimerContent() {
   const deleteEntry = trpc.timeEntries.delete.useMutation({
     onSuccess: () => {
       utils.task.byId.invalidate({ id: taskId });
+      invalidateAnalytics();
       toast.success('記錄已刪除');
     },
     onError: (error) => {
