@@ -11,6 +11,7 @@ import { friendRouter } from './friend';
 import { rankingRouter } from './ranking';
 import { friendStatsRouter } from './friendStats';
 import { notificationRouter } from './notification';
+import { userRouter } from './user';
 
 export const appRouter = router({
   healthcheck: publicProcedure.query(() => 'Learning Dashboard API is running!'),
@@ -24,6 +25,7 @@ export const appRouter = router({
   ranking: rankingRouter,
   friendStats: friendStatsRouter,
   notification: notificationRouter,
+  user: userRouter,
 });
 
 export const createCaller = createCallerFactory(appRouter);

@@ -28,12 +28,11 @@ export default function RankingPage() {
   const dimensions: { key: Dimension; label: string }[] = [
     { key: 'hours', label: 'Study Hours' },
     { key: 'streak', label: 'Streak' },
-    { key: 'tasks', label: 'Tasks Done' },
   ];
 
   return (
-    <div className="py-6 px-4 md:py-10 md:px-12 flex flex-col gap-6 md:gap-8">
-      <h1 className="text-2xl md:text-4xl font-medium tracking-tight">Ranking</h1>
+    <div className="md:py-10 md:px-12 py-4 px-6 flex flex-col gap-8">
+      <h1 className="text-4xl font-medium tracking-tight">Ranking</h1>
 
       {/* Controls */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -41,9 +40,8 @@ export default function RankingPage() {
           {dimensions.map(({ key, label }) => (
             <button
               key={key}
-              className={`rounded px-3 py-1.5 text-xs md:text-sm font-medium ${
-                dimension === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
-              }`}
+              className={`rounded px-3 py-1.5 text-sm font-medium ${dimension === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+                }`}
               onClick={() => setDimension(key)}
             >
               {label}
@@ -52,13 +50,12 @@ export default function RankingPage() {
         </div>
 
         {dimension !== 'streak' && (
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             {(['week', 'month'] as const).map((tr) => (
               <button
                 key={tr}
-                className={`rounded px-3 py-1.5 text-xs md:text-sm font-medium ${
-                  timeRange === tr ? 'bg-foreground text-white' : 'bg-muted text-muted-foreground'
-                }`}
+                className={`rounded px-3 py-1.5 text-xs font-medium ${timeRange === tr ? 'bg-foreground text-white' : 'bg-muted text-muted-foreground'
+                  }`}
                 onClick={() => setTimeRange(tr)}
               >
                 {tr === 'week' ? 'This Week' : 'This Month'}

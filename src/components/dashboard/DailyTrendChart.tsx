@@ -1,6 +1,7 @@
 // src/components/dashboard/DailyTrendChart.tsx
 'use client';
 
+import { useMemo } from 'react';
 import {
   XAxis,
   YAxis,
@@ -34,8 +35,17 @@ interface DailyTrendChartProps {
 }
 
 export function DailyTrendChart({ timeRange }: DailyTrendChartProps) {
+  const todayDate = useMemo(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
   const { data, isLoading } = trpc.analytics.dailyTrend.useQuery({
     days: DAYS_MAP[timeRange],
+    todayDate,
   });
 
   if (isLoading) {
