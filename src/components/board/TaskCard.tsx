@@ -54,7 +54,7 @@ export function TaskCard({
         }}
       >
         <Play size={14} fill="white" />
-        Start Timer
+        開始計時
       </button>
       <MoreHorizontal
         size={16}
