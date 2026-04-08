@@ -5,17 +5,20 @@ import { sendPushToUser } from '~/server/routers/notification.service';
 /** 根據用戶的 timezone 取得「今天零時」對應的 UTC 時間 */
 function getTodayStartForTimezone(timezone: string | null): Date {
   const tz = timezone ?? 'UTC';
-  // Get "today" date string in the user's timezone (YYYY-MM-DD format)
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  // Parse as midnight UTC, then adjust by timezone offset
-  // Approach: create a date formatter that tells us the offset
-  const nowUtc = new Date();
-  const inTz = new Date(nowUtc.toLocaleString('en-US', { timeZone: tz }));
-  const offsetMs = inTz.getTime() - nowUtc.getTime();
+  try {
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const nowUtc = new Date();
+    const inTz = new Date(nowUtc.toLocaleString('en-US', { timeZone: tz }));
+    const offsetMs = inTz.getTime() - nowUtc.getTime();
 
-  const [year, month, day] = todayStr.split('-').map(Number);
-  // Midnight in user's TZ = that date at 00:00 local = UTC minus the offset
-  return new Date(Date.UTC(year, month - 1, day) - offsetMs);
+    const [year, month, day] = todayStr.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day) - offsetMs);
+  } catch {
+    // Invalid timezone — fall back to UTC
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -37,23 +40,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent: 0 });
   }
 
-  // Check each user's activity based on their local "today"
-  const inactiveUserIds: string[] = [];
-
+  // Group subscribers by their "today start" to batch queries
+  const usersByTodayStart = new Map<number, string[]>();
   for (const sub of activeSubscribers) {
     const todayStart = getTodayStartForTimezone(sub.user.timezone);
-    const hasActivity = await prisma.timeEntry.findFirst({
-      where: {
-        board: { user_id: sub.userId },
-        createdAt: { gte: todayStart },
-      },
-      select: { id: true },
-    });
-
-    if (!hasActivity) {
-      inactiveUserIds.push(sub.userId);
+    const key = todayStart.getTime();
+    const list = usersByTodayStart.get(key);
+    if (list) {
+      list.push(sub.userId);
+    } else {
+      usersByTodayStart.set(key, [sub.userId]);
     }
   }
+
+  // Batch query: for each unique "today start", find users who have activity
+  const activeUserIds = new Set<string>();
+  await Promise.all(
+    [...usersByTodayStart.entries()].map(async ([ts, userIds]) => {
+      const entries = await prisma.timeEntry.findMany({
+        where: {
+          board: { user_id: { in: userIds } },
+          createdAt: { gte: new Date(ts) },
+        },
+        select: { board: { select: { user_id: true } } },
+        distinct: ['boardId'],
+      });
+      for (const e of entries) {
+        activeUserIds.add(e.board.user_id);
+      }
+    }),
+  );
+
+  const allUserIds = activeSubscribers.map((s) => s.userId);
+  const inactiveUserIds = allUserIds.filter((uid) => !activeUserIds.has(uid));
 
   const results = await Promise.allSettled(
     inactiveUserIds.map((uid) =>

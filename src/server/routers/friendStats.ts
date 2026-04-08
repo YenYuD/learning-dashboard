@@ -59,7 +59,7 @@ export const friendStatsRouter = router({
           },
         }),
         prisma.timeEntry.findMany({
-          where: userFilter,
+          where: { ...userFilter, createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } },
           select: { createdAt: true },
         }),
       ]);
