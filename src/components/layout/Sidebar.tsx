@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus } from 'lucide-react';
+import { LayoutDashboard, Plus, Users, Trophy, Settings } from 'lucide-react';
 import { BoardIcon } from '~/components/ui/board-icon';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -45,6 +45,34 @@ export function Sidebar() {
           >
             <LayoutDashboard size={16} />
             Dashboard
+          </Link>
+
+          {/* Friends link */}
+          <Link
+            href="/friends"
+            className={cn(
+              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors relative',
+              pathname === '/friends' || pathname.startsWith('/friends/')
+                ? 'text-sidebar-accent before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:rounded-full before:bg-sidebar-accent'
+                : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
+            )}
+          >
+            <Users size={16} />
+            Friends
+          </Link>
+
+          {/* Ranking link */}
+          <Link
+            href="/ranking"
+            className={cn(
+              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors relative',
+              pathname === '/ranking'
+                ? 'text-sidebar-accent before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:rounded-full before:bg-sidebar-accent'
+                : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
+            )}
+          >
+            <Trophy size={16} />
+            Ranking
           </Link>
 
           {/* Board list */}
@@ -109,6 +137,18 @@ export function Sidebar() {
             <Plus size={16} />
             新增 Board
           </Button>
+          <Link
+            href="/settings"
+            className={cn(
+              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              pathname === '/settings'
+                ? 'text-sidebar-accent'
+                : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
+            )}
+          >
+            <Settings size={16} />
+            Settings
+          </Link>
           <UserMenu />
         </div>
       </aside>

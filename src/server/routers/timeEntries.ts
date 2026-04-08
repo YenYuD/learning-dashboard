@@ -1,6 +1,7 @@
 import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { checkMilestoneAndNotify, checkRankingChangeAndNotify } from './notification.service';
 
 export const timeEntriesRouter = router({
   create: protectedProcedure
@@ -12,8 +13,19 @@ export const timeEntriesRouter = router({
       endTime: z.date().optional(),
       note: z.string().optional(),
     }))
-    .mutation(({ input }) => {
-      return prisma.timeEntry.create({ data: input });
+    .mutation(async ({ ctx, input }) => {
+      const entry = await prisma.timeEntry.create({ data: input });
+
+      // Fire-and-forget: async notification hooks, don't block response
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { name: true },
+      });
+
+      checkMilestoneAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
+      checkRankingChangeAndNotify(ctx.userId, user?.name ?? null, input.duration).catch(console.error);
+
+      return entry;
     }),
 
   update: protectedProcedure
