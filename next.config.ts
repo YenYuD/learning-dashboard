@@ -10,6 +10,13 @@ import './src/server/env';
 const config: NextConfig = {
   reactStrictMode: true,
 
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+    ],
+  },
+
   // Required for Docker standalone deployment
   output: 'standalone',
 

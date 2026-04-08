@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '~/lib/utils';
 
@@ -27,7 +28,7 @@ export function RankRow({ rank, userId, name, image, value, formatValue, isMe }:
         {rank}
       </span>
       {image ? (
-        <img src={image} alt="" className="h-10 w-10 rounded-full object-cover" />
+        <Image src={image} alt="使用者頭像" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
       ) : (
         <div className="h-10 w-10 rounded-full bg-muted" />
       )}

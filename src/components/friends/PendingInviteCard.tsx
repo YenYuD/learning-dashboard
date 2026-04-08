@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Check, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 
@@ -14,7 +15,7 @@ export function PendingInviteCard({ requester, onAccept, onDecline, isPending }:
   return (
     <div className="flex items-center gap-4 px-6 py-4">
       {requester.image ? (
-        <img src={requester.image} alt="" className="h-10 w-10 rounded-full object-cover" />
+        <Image src={requester.image} alt="邀請者頭像" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
       ) : (
         <div className="h-10 w-10 rounded-full bg-muted" />
       )}

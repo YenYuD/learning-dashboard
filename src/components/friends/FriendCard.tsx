@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '~/components/ui/button';
@@ -23,7 +24,7 @@ export function FriendCard({ friendshipId, id, name, image, weeklyInfo }: Friend
     <div className="flex items-center gap-4 px-6 py-4">
       <Link href={`/friends/${id}`} className="flex flex-1 items-center gap-4">
         {image ? (
-          <img src={image} alt="" className="h-10 w-10 rounded-full object-cover" />
+          <Image src={image} alt="好友頭像" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
         ) : (
           <div className="h-10 w-10 rounded-full bg-muted" />
         )}

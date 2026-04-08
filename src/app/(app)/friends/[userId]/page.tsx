@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Flame } from 'lucide-react';
 import { trpc } from '~/utils/trpc';
@@ -46,7 +47,7 @@ export default function FriendStatsPage() {
           <ArrowLeft size={20} />
         </button>
         {summary?.image ? (
-          <img src={summary.image} alt="" className="h-12 w-12 rounded-full object-cover" />
+          <Image src={summary.image} alt="好友頭像" width={48} height={48} className="h-12 w-12 rounded-full object-cover" />
         ) : (
           <div className="h-12 w-12 rounded-full bg-muted" />
         )}

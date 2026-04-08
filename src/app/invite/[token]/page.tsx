@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
@@ -72,9 +73,11 @@ export default function InvitePage() {
         ) : (
           <>
             {validation.inviterImage ? (
-              <img
+              <Image
                 src={validation.inviterImage}
-                alt=""
+                alt="邀請者頭像"
+                width={64}
+                height={64}
                 className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
