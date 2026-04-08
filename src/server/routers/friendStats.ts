@@ -53,7 +53,7 @@ export const friendStatsRouter = router({
           where: {
             list: {
               board: { user_id: input.friendId },
-              name: { in: ['Done', 'done', 'Complete', 'complete', 'Completed', 'completed'] },
+              name: { in: ['done', 'complete', 'completed'], mode: 'insensitive' },
             },
             updatedAt: { gte: weekStart },
           },
