@@ -3,6 +3,9 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { ArrowLeft, Play, Pause, Square, Plus, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
@@ -17,6 +20,7 @@ import {
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -48,6 +52,55 @@ function getStartOfMonth(date: Date): Date {
   return d;
 }
 
+const TIMER_STORAGE_KEY = 'learning-dashboard-timer';
+
+interface TimerState {
+  elapsed: number;
+  running: boolean;
+  startTime: string | null;
+  boardId: string;
+  taskId: string;
+  lastSavedAt: string;
+}
+
+function saveTimerState(state: TimerState) {
+  try {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+function loadTimerState(): TimerState | null {
+  try {
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TimerState;
+  } catch {
+    return null;
+  }
+}
+
+function clearTimerState() {
+  try {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch {
+    // silent
+  }
+}
+
+const manualEntrySchema = z.object({
+  hours: z.number().int().min(0, '小時數不可為負').max(23, '小時數須介於 0 ~ 23'),
+  minutes: z.number().int().min(0, '分鐘數不可為負').max(59, '分鐘數須介於 0 ~ 59'),
+  date: z.string().min(1, '請選擇日期'),
+  note: z.string().optional(),
+}).refine((data) => data.hours * 60 + data.minutes > 0, {
+  message: '時長必須大於 0 分鐘',
+  path: ['minutes'],
+});
+
+type ManualEntryFormData = z.infer<typeof manualEntrySchema>;
+
 function TaskTimerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -58,12 +111,24 @@ function TaskTimerContent() {
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const initializedRef = useRef(false);
 
   const [manualOpen, setManualOpen] = useState(false);
-  const [manualHours, setManualHours] = useState(0);
-  const [manualMinutes, setManualMinutes] = useState(0);
-  const [manualDate, setManualDate] = useState(new Date().toISOString().slice(0, 10));
-  const [manualNote, setManualNote] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ManualEntryFormData>({
+    resolver: zodResolver(manualEntrySchema),
+    defaultValues: {
+      hours: 0,
+      minutes: 0,
+      date: new Date().toISOString().slice(0, 10),
+      note: '',
+    },
+  });
 
   const utils = trpc.useUtils();
   const { data: task, isLoading } = trpc.task.byId.useQuery(
@@ -71,11 +136,34 @@ function TaskTimerContent() {
     { enabled: !!taskId },
   );
 
+  const invalidateAnalytics = () => {
+    utils.analytics.summary.invalidate();
+    utils.analytics.weeklyByBoard.invalidate();
+    utils.analytics.boardDistribution.invalidate();
+    utils.analytics.dailyTrend.invalidate();
+    utils.analytics.monthlyCalendar.invalidate();
+    utils.analytics.monthlyBoardBreakdown.invalidate();
+  };
+
   const createEntry = trpc.timeEntries.create.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      invalidateAnalytics();
+      toast.success('時間記錄已儲存');
+    },
+    onError: (error) => {
+      toast.error('儲存失敗', { description: error.message });
+    },
   });
   const deleteEntry = trpc.timeEntries.delete.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      invalidateAnalytics();
+      toast.success('記錄已刪除');
+    },
+    onError: (error) => {
+      toast.error('刪除失敗', { description: error.message });
+    },
   });
 
   const timeEntries = useMemo(() => task?.timeEntries ?? [], [task?.timeEntries]);
@@ -97,14 +185,78 @@ function TaskTimerContent() {
     };
   }, [timeEntries]);
 
+  // Restore timer state from localStorage on mount
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const saved = loadTimerState();
+    if (!saved) return;
+    if (saved.boardId !== boardId || saved.taskId !== taskId) return;
+
+    if (saved.running && saved.startTime) {
+      const startMs = new Date(saved.startTime).getTime();
+      const realElapsed = Math.floor((Date.now() - startMs) / 1000);
+      setElapsed(realElapsed);
+      setRunning(true);
+      startTimeRef.current = new Date(saved.startTime);
+    } else if (saved.elapsed > 0) {
+      setElapsed(saved.elapsed);
+      startTimeRef.current = saved.startTime ? new Date(saved.startTime) : null;
+    }
+  }, [boardId, taskId]);
+
   useEffect(() => {
     if (running) {
-      intervalRef.current = setInterval(() => setElapsed((p) => p + 1), 1000);
+      intervalRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          const realElapsed = Math.floor(
+            (Date.now() - startTimeRef.current.getTime()) / 1000,
+          );
+          setElapsed(realElapsed);
+        } else {
+          setElapsed((p) => p + 1);
+        }
+      }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [running]);
+
+  // Persist timer state to localStorage whenever it changes
+  useEffect(() => {
+    if (!initializedRef.current) return;
+
+    if (elapsed === 0 && !running) {
+      clearTimerState();
+      return;
+    }
+
+    saveTimerState({
+      elapsed,
+      running,
+      startTime: startTimeRef.current?.toISOString() ?? null,
+      boardId,
+      taskId,
+      lastSavedAt: new Date().toISOString(),
+    });
+  }, [elapsed, running, boardId, taskId]);
+
+  // Warn before closing/refreshing browser when timer is active
+  useEffect(() => {
+    const hasActiveTimer = running || elapsed > 0;
+    if (!hasActiveTimer) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [running, elapsed]);
 
   const handlePlayPause = () => {
     if (!running && elapsed === 0) startTimeRef.current = new Date();
@@ -125,35 +277,40 @@ function TaskTimerContent() {
     setRunning(false);
     setElapsed(0);
     startTimeRef.current = null;
+    clearTimerState();
   };
 
-  const handleManualSubmit = () => {
-    const totalMinutes = manualHours * 60 + manualMinutes;
-    if (totalMinutes <= 0) return;
-    const entryDate = new Date(manualDate);
+  const onManualSubmit = (data: ManualEntryFormData) => {
+    const totalMinutes = data.hours * 60 + data.minutes;
+    const entryDate = new Date(data.date);
     createEntry.mutate({
       boardId,
       taskId,
       duration: totalMinutes,
       startTime: entryDate,
       endTime: entryDate,
-      note: manualNote || '手動新增',
+      note: data.note || '手動新增',
     });
-    setManualHours(0);
-    setManualMinutes(0);
-    setManualDate(new Date().toISOString().slice(0, 10));
-    setManualNote('');
+    reset();
     setManualOpen(false);
   };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {/* Header */}
-      <div className="flex h-14 items-center gap-3 border-b bg-card px-6 shrink-0">
+      <div className="flex h-14 items-center gap-3 border-b bg-card px-4 md:px-6 shrink-0">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(`/board/${boardId}`)}
+          onClick={() => {
+            if (
+              (running || elapsed > 0) &&
+              !window.confirm('您有未儲存的計時紀錄，確定要離開嗎？')
+            ) {
+              return;
+            }
+            router.push(`/board/${boardId}`);
+          }}
         >
           <ArrowLeft size={18} />
         </Button>
@@ -168,11 +325,11 @@ function TaskTimerContent() {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col items-center gap-8 p-8 max-w-2xl mx-auto w-full">
+      <div className="flex flex-col items-center gap-6 p-4 md:gap-8 md:p-8 max-w-2xl mx-auto w-full">
         {/* 計時器 */}
         <Card className="w-full">
-          <CardContent className="flex flex-col items-center gap-6 py-10">
-            <span className="text-6xl font-bold tracking-widest tabular-nums">
+          <CardContent className="flex flex-col items-center gap-4 py-8 md:gap-6 md:py-10">
+            <span className="text-5xl md:text-6xl font-bold tracking-widest tabular-nums">
               {formatTime(elapsed)}
             </span>
             <div className="flex items-center gap-4">
@@ -229,56 +386,72 @@ function TaskTimerContent() {
             <DialogHeader>
               <DialogTitle>手動新增時間</DialogTitle>
             </DialogHeader>
-            <div className="flex flex-col gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">時長</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={manualHours}
-                    onChange={(e) => setManualHours(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">小時</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={manualMinutes}
-                    onChange={(e) => setManualMinutes(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">分鐘</span>
+            <form onSubmit={handleSubmit(onManualSubmit)}>
+              <div className="flex flex-col gap-4 py-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">時長</label>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        className="w-20"
+                        {...register('hours', { valueAsNumber: true })}
+                      />
+                      <span className="text-sm text-muted-foreground">小時</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        className="w-20"
+                        {...register('minutes', { valueAsNumber: true })}
+                      />
+                      <span className="text-sm text-muted-foreground">分鐘</span>
+                    </div>
+                    {(errors.hours || errors.minutes) && (
+                      <p className="text-sm text-destructive">
+                        {errors.hours?.message || errors.minutes?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">日期</label>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <Input
+                      type="date"
+                      {...register('date')}
+                    />
+                    {errors.date && (
+                      <p className="text-sm text-destructive">{errors.date.message}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">備註</label>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <Input
+                      type="text"
+                      placeholder="選填"
+                      {...register('note')}
+                    />
+                    {errors.note && (
+                      <p className="text-sm text-destructive">{errors.note.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">日期</label>
-                <Input
-                  type="date"
-                  value={manualDate}
-                  onChange={(e) => setManualDate(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">備註</label>
-                <Input
-                  type="text"
-                  placeholder="選填"
-                  value={manualNote}
-                  onChange={(e) => setManualNote(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setManualOpen(false)}>取消</Button>
-              <Button
-                onClick={handleManualSubmit}
-                disabled={manualHours * 60 + manualMinutes <= 0 || createEntry.isPending}
-              >
-                新增
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setManualOpen(false)}>取消</Button>
+                <Button
+                  type="submit"
+                  disabled={createEntry.isPending}
+                >
+                  新增
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 

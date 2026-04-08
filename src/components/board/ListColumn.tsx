@@ -14,6 +14,7 @@ import { TaskCard } from './TaskCard';
 import { AddTaskButton } from './AddTaskButton';
 import { TaskDetailModal } from '~/components/dialogs/TaskDetailModal';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface Task {
   id: string;
@@ -48,11 +49,17 @@ export function ListColumn({ listId, boardId, title, tasks, allLists }: ListColu
       utils.board.byId.invalidate({ id: boardId });
       setIsRenaming(false);
     },
+    onError: (error) => {
+      toast.error('更新清單失敗', { description: error.message });
+    },
   });
 
   const deleteList = trpc.list.delete.useMutation({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: boardId });
+    },
+    onError: (error) => {
+      toast.error('刪除清單失敗', { description: error.message });
     },
   });
 
@@ -86,7 +93,7 @@ export function ListColumn({ listId, boardId, title, tasks, allLists }: ListColu
 
   return (
     <>
-      <div className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60">
+      <div className="flex w-64 md:w-72 shrink-0 flex-col rounded-lg bg-muted/60">
         {/* List header */}
         <div className="flex items-center justify-between px-3 py-2.5">
           {isRenaming ? (

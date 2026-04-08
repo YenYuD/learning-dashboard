@@ -14,7 +14,7 @@ import { useState } from 'react';
 function BoardSkeleton() {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex h-14 items-center justify-between border-b bg-card px-6">
+      <div className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
         <div className="flex items-center gap-2">
           <Skeleton className="h-7 w-7 rounded" />
           <Skeleton className="h-6 w-32" />
@@ -24,7 +24,7 @@ function BoardSkeleton() {
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex h-full gap-3 p-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60 p-3 gap-3">
+            <div key={i} className="flex w-64 md:w-72 shrink-0 flex-col rounded-lg bg-muted/60 p-3 gap-3">
               <Skeleton className="h-5 w-24" />
               <Skeleton className="h-20 w-full rounded" />
               <Skeleton className="h-20 w-full rounded" />

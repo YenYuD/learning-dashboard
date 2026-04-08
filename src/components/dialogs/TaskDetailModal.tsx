@@ -11,6 +11,7 @@ import {
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 interface TaskDetailModalProps {
   open: boolean;
@@ -41,12 +42,18 @@ export function TaskDetailModal({
       utils.board.byId.invalidate({ id: boardId });
       onOpenChange(false);
     },
+    onError: (error) => {
+      toast.error('更新任務失敗', { description: error.message });
+    },
   });
 
   const deleteTask = trpc.task.delete.useMutation({
     onSuccess: () => {
       utils.board.byId.invalidate({ id: boardId });
       onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error('刪除任務失敗', { description: error.message });
     },
   });
 

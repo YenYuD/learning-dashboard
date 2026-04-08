@@ -99,11 +99,14 @@ export const analyticsRouter = router({
     .input(
       z.object({
         timeRange: z.enum(['today', 'week', 'month', 'year']).default('week'),
+        todayDate: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Anchor to the client's local midnight (treated as UTC midnight)
+      const today = new Date(input.todayDate + 'T00:00:00.000Z');
+      const y = today.getUTCFullYear();
+      const m = today.getUTCMonth();
 
       let startDate: Date;
       let labels: string[];
@@ -115,19 +118,19 @@ export const analyticsRouter = router({
         getDayIndex = () => 0;
       } else if (input.timeRange === 'week') {
         startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+        startDate.setUTCDate(startDate.getUTCDate() - ((startDate.getUTCDay() + 6) % 7));
         labels = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-        getDayIndex = (date: Date) => (date.getDay() + 6) % 7;
+        getDayIndex = (date: Date) => (date.getUTCDay() + 6) % 7;
       } else if (input.timeRange === 'month') {
         // month – group by week within the month
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = new Date(Date.UTC(y, m, 1));
         labels = ['第1週', '第2週', '第3週', '第4週', '第5週'];
-        getDayIndex = (date: Date) => Math.min(Math.floor((date.getDate() - 1) / 7), 4);
+        getDayIndex = (date: Date) => Math.min(Math.floor((date.getUTCDate() - 1) / 7), 4);
       } else {
         // year – group by month
-        startDate = new Date(now.getFullYear(), 0, 1);
+        startDate = new Date(Date.UTC(y, 0, 1));
         labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-        getDayIndex = (date: Date) => date.getMonth();
+        getDayIndex = (date: Date) => date.getUTCMonth();
       }
 
       const entries = await prisma.timeEntry.findMany({
@@ -298,15 +301,14 @@ export const analyticsRouter = router({
     .input(
       z.object({
         days: z.number().default(7),
+        todayDate: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const now = new Date();
-      const startDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - (input.days - 1),
-      );
+      // Anchor to the client's local midnight (treated as UTC midnight)
+      const today = new Date(input.todayDate + 'T00:00:00.000Z');
+      const startDate = new Date(today);
+      startDate.setUTCDate(startDate.getUTCDate() - (input.days - 1));
 
       // Fetch all entries in range at once instead of N queries
       const entries = await prisma.timeEntry.findMany({
@@ -320,21 +322,22 @@ export const analyticsRouter = router({
         select: { duration: true, startTime: true, createdAt: true },
       });
 
-      // Bucket by day
+      // Bucket by day (using UTC to match client's date)
       const buckets = new Map<string, number>();
       for (const entry of entries) {
         const d = effectiveDate(entry);
-        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
         buckets.set(key, (buckets.get(key) ?? 0) + entry.duration);
       }
 
       const result = [];
       for (let i = input.days - 1; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        const date = new Date(today);
+        date.setUTCDate(date.getUTCDate() - i);
+        const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
         const minutes = buckets.get(key) ?? 0;
         result.push({
-          date: `${date.getMonth() + 1}/${date.getDate()}`,
+          date: `${date.getUTCMonth() + 1}/${date.getUTCDate()}`,
           hours: +(minutes / 60).toFixed(1),
         });
       }
