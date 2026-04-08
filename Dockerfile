@@ -36,9 +36,17 @@ RUN --mount=type=cache,target=/root/.npm \
 # ============================================
 
 FROM node:${NODE_VERSION} AS builder
+RUN apt-get update -y && apt-get install -y openssl
 
 # Set working directory
 WORKDIR /app
+
+# NEXT_PUBLIC_* vars must be available at build time (inlined into client bundle)
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+# Skip env validation during Docker build (runtime secrets not available yet)
+ENV SKIP_ENV_VALIDATION=1
 
 # Copy project dependencies from dependencies stage
 COPY --from=dependencies /app/node_modules ./node_modules
