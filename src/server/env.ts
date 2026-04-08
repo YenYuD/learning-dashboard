@@ -10,6 +10,12 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
   NEXTAUTH_SECRET: z.string().min(1),
   NEXTAUTH_URL: z.string().url(),
+  // Push notification (optional — dev can skip)
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_EMAIL: z.string().optional(),
+  // Cron auth secret
+  CRON_SECRET: z.string().optional(),
 });
 
 // Skip validation during Docker build (no runtime env vars available yet)

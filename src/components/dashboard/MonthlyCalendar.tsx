@@ -100,7 +100,7 @@ export function MonthlyCalendar() {
                 className={[
                   'relative flex flex-col items-center justify-center rounded aspect-square',
                   isFuture
-                    ? 'opacity-0 pointer-events-none'
+                    ? 'text-muted-foreground/40'
                     : learned
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/40 text-muted-foreground',
