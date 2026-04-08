@@ -195,6 +195,19 @@ function TaskTimerContent() {
     });
   }, [elapsed, running, boardId, taskId]);
 
+  // Warn before closing/refreshing browser when timer is active
+  useEffect(() => {
+    const hasActiveTimer = running || elapsed > 0;
+    if (!hasActiveTimer) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [running, elapsed]);
+
   const handlePlayPause = () => {
     if (!running && elapsed === 0) startTimeRef.current = new Date();
     setRunning((r) => !r);
@@ -243,7 +256,15 @@ function TaskTimerContent() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push(`/board/${boardId}`)}
+          onClick={() => {
+            if (
+              (running || elapsed > 0) &&
+              !window.confirm('您有未儲存的計時紀錄，確定要離開嗎？')
+            ) {
+              return;
+            }
+            router.push(`/board/${boardId}`);
+          }}
         >
           <ArrowLeft size={18} />
         </Button>
