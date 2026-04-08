@@ -32,16 +32,16 @@ export default function RankingPage() {
   ];
 
   return (
-    <div className="py-10 px-12 flex flex-col gap-8">
-      <h1 className="text-4xl font-medium tracking-tight">Ranking</h1>
+    <div className="py-6 px-4 md:py-10 md:px-12 flex flex-col gap-6 md:gap-8">
+      <h1 className="text-2xl md:text-4xl font-medium tracking-tight">Ranking</h1>
 
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex gap-2">
           {dimensions.map(({ key, label }) => (
             <button
               key={key}
-              className={`rounded px-3 py-1.5 text-sm font-medium ${
+              className={`rounded px-3 py-1.5 text-xs md:text-sm font-medium ${
                 dimension === key ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
               }`}
               onClick={() => setDimension(key)}
@@ -56,7 +56,7 @@ export default function RankingPage() {
             {(['week', 'month'] as const).map((tr) => (
               <button
                 key={tr}
-                className={`rounded px-3 py-1.5 text-sm font-medium ${
+                className={`rounded px-3 py-1.5 text-xs md:text-sm font-medium ${
                   timeRange === tr ? 'bg-foreground text-white' : 'bg-muted text-muted-foreground'
                 }`}
                 onClick={() => setTimeRange(tr)}
@@ -70,11 +70,11 @@ export default function RankingPage() {
 
       {/* Table */}
       <div className="divide-y rounded-lg border">
-        <div className="flex items-center gap-4 bg-muted/50 px-6 py-3">
-          <span className="w-10 text-xs font-medium text-muted-foreground">#</span>
-          <span className="w-10" />
+        <div className="flex items-center gap-3 md:gap-4 bg-muted/50 px-3 md:px-6 py-3">
+          <span className="w-8 md:w-10 text-xs font-medium text-muted-foreground">#</span>
+          <span className="w-8 md:w-10" />
           <span className="flex-1 text-xs font-medium text-muted-foreground">Name</span>
-          <span className="w-24 text-right text-xs font-medium text-muted-foreground">
+          <span className="w-16 md:w-24 text-right text-xs font-medium text-muted-foreground">
             {dimension === 'hours' ? 'Hours' : dimension === 'streak' ? 'Days' : 'Tasks'}
           </span>
         </div>

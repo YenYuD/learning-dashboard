@@ -16,9 +16,9 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
 
   return (
-    <div className="py-10 px-12 space-y-6">
+    <div className="py-6 px-4 md:py-10 md:px-12 space-y-4 md:space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-[40px] font-medium leading-tight">Learning Dashboard</h1>
+        <h1 className="text-2xl md:text-[40px] font-medium leading-tight">Learning Dashboard</h1>
         <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
       </div>
       <StatsRow />

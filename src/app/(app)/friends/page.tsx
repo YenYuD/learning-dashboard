@@ -23,10 +23,10 @@ export default function FriendsPage() {
   const pendingCount = pendingQuery.data?.length ?? 0;
 
   return (
-    <div className="py-10 px-12 flex flex-col gap-8">
+    <div className="py-6 px-4 md:py-10 md:px-12 flex flex-col gap-6 md:gap-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-medium tracking-tight">好友</h1>
+        <h1 className="text-2xl md:text-4xl font-medium tracking-tight">好友</h1>
         <InviteLinkDialog
           trigger={
             <Button>

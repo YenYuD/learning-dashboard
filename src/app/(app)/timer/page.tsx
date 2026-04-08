@@ -149,7 +149,7 @@ function TaskTimerContent() {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {/* Header */}
-      <div className="flex h-14 items-center gap-3 border-b bg-card px-6 shrink-0">
+      <div className="flex h-14 items-center gap-3 border-b bg-card px-4 md:px-6 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -168,11 +168,11 @@ function TaskTimerContent() {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col items-center gap-8 p-8 max-w-2xl mx-auto w-full">
+      <div className="flex flex-col items-center gap-6 p-4 md:gap-8 md:p-8 max-w-2xl mx-auto w-full">
         {/* 計時器 */}
         <Card className="w-full">
-          <CardContent className="flex flex-col items-center gap-6 py-10">
-            <span className="text-6xl font-bold tracking-widest tabular-nums">
+          <CardContent className="flex flex-col items-center gap-4 py-8 md:gap-6 md:py-10">
+            <span className="text-5xl md:text-6xl font-bold tracking-widest tabular-nums">
               {formatTime(elapsed)}
             </span>
             <div className="flex items-center gap-4">
