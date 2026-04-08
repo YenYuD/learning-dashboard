@@ -3,6 +3,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +39,12 @@ const BOARD_TYPES: { type: BoardType; label: string; icon: React.ReactNode; desc
   },
 ];
 
+const createBoardSchema = z.object({
+  name: z.string().min(1, 'Board 名稱為必填').max(50, 'Board 名稱不可超過 50 字'),
+});
+
+type CreateBoardFormData = z.infer<typeof createBoardSchema>;
+
 interface CreateBoardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,9 +52,18 @@ interface CreateBoardModalProps {
 
 export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) {
   const [boardType, setBoardType] = useState<BoardType>('TASK_BASED');
-  const [boardName, setBoardName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string>(BOARD_COLORS[0].value);
   const [boardIcon, setBoardIcon] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateBoardFormData>({
+    resolver: zodResolver(createBoardSchema),
+    defaultValues: { name: '' },
+  });
 
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -91,7 +109,7 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
       });
       utils.board.list.invalidate();
       onOpenChange(false);
-      setBoardName('');
+      reset();
       setBoardType('TASK_BASED');
       setSelectedColor(BOARD_COLORS[0].value);
       setBoardIcon('');
@@ -99,10 +117,9 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
     },
   });
 
-  const handleCreate = () => {
-    if (!boardName.trim()) return;
+  const onSubmit = (data: CreateBoardFormData) => {
     createBoard.mutate({
-      name: boardName.trim(),
+      name: data.name.trim(),
       type: boardType,
       icon: boardIcon || undefined,
       color: selectedColor,
@@ -156,9 +173,11 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
               </label>
               <Input
                 placeholder="例：日文 N2 備考"
-                value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
+                {...register('name')}
               />
+              {errors.name && (
+                <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -205,8 +224,8 @@ export function CreateBoardModal({ open, onOpenChange }: CreateBoardModalProps) 
             取消
           </Button>
           <Button
-            onClick={handleCreate}
-            disabled={!boardName.trim() || createBoard.isPending}
+            onClick={handleSubmit(onSubmit)}
+            disabled={createBoard.isPending}
           >
             {createBoard.isPending ? '建立中...' : '建立 Board'}
           </Button>

@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { trpc } from '~/utils/trpc';
-import type { TimeRange } from '~/app/(app)/dashboard/page';
+import type { TimeRange } from './DashboardContent';
 
 const DAYS_MAP: Record<TimeRange, number> = { today: 1, week: 7, month: 30, year: 365 };
 const TITLES: Record<TimeRange, string> = {

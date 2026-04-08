@@ -244,6 +244,14 @@ function TaskTimerContent() {
   };
 
   const handleManualSubmit = () => {
+    if (manualHours < 0 || manualHours > 23) {
+      toast.error('小時數須介於 0 ~ 23');
+      return;
+    }
+    if (manualMinutes < 0 || manualMinutes > 59) {
+      toast.error('分鐘數須介於 0 ~ 59');
+      return;
+    }
     const totalMinutes = manualHours * 60 + manualMinutes;
     if (totalMinutes <= 0) return;
     const entryDate = new Date(manualDate);
