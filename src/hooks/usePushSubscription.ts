@@ -27,6 +27,23 @@ export function usePushSubscription() {
     }
   }, []);
 
+  /** Save a PushSubscription to the backend */
+  const saveSubscription = useCallback(async (subscription: PushSubscription) => {
+    const json = subscription.toJSON();
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+      throw new Error('Push subscription is missing required fields');
+    }
+
+    await subscribeMutation.mutateAsync({
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+
+    await utils.notification.status.invalidate();
+  }, [subscribeMutation, utils]);
+
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       throw new Error('Push notifications are not supported in this browser');
@@ -43,34 +60,25 @@ export function usePushSubscription() {
       throw new Error('Notification permission was denied');
     }
 
-    // Check if a service worker is registered (next-pwa disables SW in dev)
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    if (registrations.length === 0) {
-      throw new Error('Service worker not available. Push notifications require a production build.');
-    }
+    // Wait for the service worker to be ready (with timeout)
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Service worker not available. Push notifications require a production build.')), 5000)
+      ),
+    ]);
 
-    const registration = await navigator.serviceWorker.ready;
+    // Reuse existing browser subscription if present, otherwise create new one
+    const subscription =
+      (await registration.pushManager.getSubscription()) ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
+      }));
 
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
-    });
-
-    const json = subscription.toJSON();
-    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-      throw new Error('Push subscription is missing required fields');
-    }
-
-    await subscribeMutation.mutateAsync({
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    });
-
-    await utils.notification.status.invalidate();
+    await saveSubscription(subscription);
     return true;
-  }, [subscribeMutation, utils]);
+  }, [saveSubscription]);
 
   const unsubscribe = useCallback(async () => {
     const registration = await navigator.serviceWorker.ready;
@@ -84,15 +92,14 @@ export function usePushSubscription() {
 
   const toggle = useCallback(async (enabled: boolean) => {
     if (enabled) {
-      // If no subscription exists yet (first time or permission already granted), subscribe first
-      if (!statusQuery.data?.deviceCount) {
-        await subscribe();
-        return;
-      }
+      // Always ensure this browser's subscription is saved to the backend.
+      // Handles: first time, new browser, or browser with subscription not in DB.
+      await subscribe();
+      return;
     }
     await toggleMutation.mutateAsync({ enabled });
     await utils.notification.status.invalidate();
-  }, [statusQuery.data?.deviceCount, subscribe, toggleMutation, utils]);
+  }, [subscribe, toggleMutation, utils]);
 
   return {
     permission,

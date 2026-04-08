@@ -2,15 +2,7 @@
 
 import type { NextConfig } from 'next';
 import path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const withPWAInit = require('next-pwa') as (config: { dest: string; disable?: boolean; importScripts?: string[] }) => (nextConfig: NextConfig) => NextConfig;
 import './src/server/env';
-
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  importScripts: ['/custom-sw.js'],
-});
 
 /**
  * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
@@ -42,4 +34,4 @@ const config: NextConfig = {
   },
 };
 
-export default withPWA(config);
+export default config;
