@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import { TRPCReactProvider } from '~/utils/trpc-provider';
 import { SessionProvider } from '~/components/providers/SessionProvider';
+import { ServiceWorkerRegister } from '~/components/ServiceWorkerRegister';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={spaceGrotesk.className}>
         <SessionProvider>
           <TRPCReactProvider>{children}</TRPCReactProvider>
+          <ServiceWorkerRegister />
         </SessionProvider>
       </body>
     </html>
