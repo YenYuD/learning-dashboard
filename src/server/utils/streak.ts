@@ -17,7 +17,7 @@ export function calculateStreakFromDates(dates: Date[]): number {
   cursor.setUTCHours(0, 0, 0, 0);
 
   // If no entry today, start checking from yesterday
-  const todayKey = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
+  const todayKey = cursor.toISOString().split('T')[0];
   if (!dateSet.has(todayKey)) {
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
