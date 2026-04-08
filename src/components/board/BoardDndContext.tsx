@@ -10,6 +10,7 @@ import {
   rectIntersection,
   getFirstCollision,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
@@ -91,6 +92,7 @@ export function BoardDndContext({ boardId, lists: initialLists }: BoardDndContex
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
   );
 
   const listIds = lists.map((l) => l.id);

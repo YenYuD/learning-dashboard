@@ -138,6 +138,11 @@ export function ListColumn({ listId, boardId, title, tasks, allLists }: ListColu
 
         {/* Task cards */}
         <div className="flex flex-col gap-2 px-2 pb-2 min-h-[60px]">
+          {tasks.length === 0 && (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              尚無任務，點擊下方新增
+            </p>
+          )}
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
