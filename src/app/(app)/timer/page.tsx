@@ -48,6 +48,43 @@ function getStartOfMonth(date: Date): Date {
   return d;
 }
 
+const TIMER_STORAGE_KEY = 'learning-dashboard-timer';
+
+interface TimerState {
+  elapsed: number;
+  running: boolean;
+  startTime: string | null;
+  boardId: string;
+  taskId: string;
+  lastSavedAt: string;
+}
+
+function saveTimerState(state: TimerState) {
+  try {
+    localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+function loadTimerState(): TimerState | null {
+  try {
+    const raw = localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TimerState;
+  } catch {
+    return null;
+  }
+}
+
+function clearTimerState() {
+  try {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch {
+    // silent
+  }
+}
+
 function TaskTimerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -58,6 +95,7 @@ function TaskTimerContent() {
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const initializedRef = useRef(false);
 
   const [manualOpen, setManualOpen] = useState(false);
   const [manualHours, setManualHours] = useState(0);
@@ -97,14 +135,65 @@ function TaskTimerContent() {
     };
   }, [timeEntries]);
 
+  // Restore timer state from localStorage on mount
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const saved = loadTimerState();
+    if (!saved) return;
+    if (saved.boardId !== boardId || saved.taskId !== taskId) return;
+
+    if (saved.running && saved.startTime) {
+      const startMs = new Date(saved.startTime).getTime();
+      const realElapsed = Math.floor((Date.now() - startMs) / 1000);
+      setElapsed(realElapsed);
+      setRunning(true);
+      startTimeRef.current = new Date(saved.startTime);
+    } else if (saved.elapsed > 0) {
+      setElapsed(saved.elapsed);
+      startTimeRef.current = saved.startTime ? new Date(saved.startTime) : null;
+    }
+  }, [boardId, taskId]);
+
   useEffect(() => {
     if (running) {
-      intervalRef.current = setInterval(() => setElapsed((p) => p + 1), 1000);
+      intervalRef.current = setInterval(() => {
+        if (startTimeRef.current) {
+          const realElapsed = Math.floor(
+            (Date.now() - startTimeRef.current.getTime()) / 1000,
+          );
+          setElapsed(realElapsed);
+        } else {
+          setElapsed((p) => p + 1);
+        }
+      }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [running]);
+
+  // Persist timer state to localStorage whenever it changes
+  useEffect(() => {
+    if (!initializedRef.current) return;
+
+    if (elapsed === 0 && !running) {
+      clearTimerState();
+      return;
+    }
+
+    saveTimerState({
+      elapsed,
+      running,
+      startTime: startTimeRef.current?.toISOString() ?? null,
+      boardId,
+      taskId,
+      lastSavedAt: new Date().toISOString(),
+    });
+  }, [elapsed, running, boardId, taskId]);
 
   const handlePlayPause = () => {
     if (!running && elapsed === 0) startTimeRef.current = new Date();
@@ -125,6 +214,7 @@ function TaskTimerContent() {
     setRunning(false);
     setElapsed(0);
     startTimeRef.current = null;
+    clearTimerState();
   };
 
   const handleManualSubmit = () => {
