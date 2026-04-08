@@ -3,6 +3,9 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { ArrowLeft, Play, Pause, Square, Plus, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
@@ -86,6 +89,18 @@ function clearTimerState() {
   }
 }
 
+const manualEntrySchema = z.object({
+  hours: z.number().int().min(0, '小時數不可為負').max(23, '小時數須介於 0 ~ 23'),
+  minutes: z.number().int().min(0, '分鐘數不可為負').max(59, '分鐘數須介於 0 ~ 59'),
+  date: z.string().min(1, '請選擇日期'),
+  note: z.string().optional(),
+}).refine((data) => data.hours * 60 + data.minutes > 0, {
+  message: '時長必須大於 0 分鐘',
+  path: ['minutes'],
+});
+
+type ManualEntryFormData = z.infer<typeof manualEntrySchema>;
+
 function TaskTimerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -99,10 +114,21 @@ function TaskTimerContent() {
   const initializedRef = useRef(false);
 
   const [manualOpen, setManualOpen] = useState(false);
-  const [manualHours, setManualHours] = useState(0);
-  const [manualMinutes, setManualMinutes] = useState(0);
-  const [manualDate, setManualDate] = useState(new Date().toISOString().slice(0, 10));
-  const [manualNote, setManualNote] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ManualEntryFormData>({
+    resolver: zodResolver(manualEntrySchema),
+    defaultValues: {
+      hours: 0,
+      minutes: 0,
+      date: new Date().toISOString().slice(0, 10),
+      note: '',
+    },
+  });
 
   const utils = trpc.useUtils();
   const { data: task, isLoading } = trpc.task.byId.useQuery(
@@ -254,30 +280,18 @@ function TaskTimerContent() {
     clearTimerState();
   };
 
-  const handleManualSubmit = () => {
-    if (manualHours < 0 || manualHours > 23) {
-      toast.error('小時數須介於 0 ~ 23');
-      return;
-    }
-    if (manualMinutes < 0 || manualMinutes > 59) {
-      toast.error('分鐘數須介於 0 ~ 59');
-      return;
-    }
-    const totalMinutes = manualHours * 60 + manualMinutes;
-    if (totalMinutes <= 0) return;
-    const entryDate = new Date(manualDate);
+  const onManualSubmit = (data: ManualEntryFormData) => {
+    const totalMinutes = data.hours * 60 + data.minutes;
+    const entryDate = new Date(data.date);
     createEntry.mutate({
       boardId,
       taskId,
       duration: totalMinutes,
       startTime: entryDate,
       endTime: entryDate,
-      note: manualNote || '手動新增',
+      note: data.note || '手動新增',
     });
-    setManualHours(0);
-    setManualMinutes(0);
-    setManualDate(new Date().toISOString().slice(0, 10));
-    setManualNote('');
+    reset();
     setManualOpen(false);
   };
 
@@ -372,56 +386,72 @@ function TaskTimerContent() {
             <DialogHeader>
               <DialogTitle>手動新增時間</DialogTitle>
             </DialogHeader>
-            <div className="flex flex-col gap-4 py-4">
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">時長</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={manualHours}
-                    onChange={(e) => setManualHours(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">小時</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={manualMinutes}
-                    onChange={(e) => setManualMinutes(Number(e.target.value))}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">分鐘</span>
+            <form onSubmit={handleSubmit(onManualSubmit)}>
+              <div className="flex flex-col gap-4 py-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">時長</label>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        className="w-20"
+                        {...register('hours', { valueAsNumber: true })}
+                      />
+                      <span className="text-sm text-muted-foreground">小時</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        className="w-20"
+                        {...register('minutes', { valueAsNumber: true })}
+                      />
+                      <span className="text-sm text-muted-foreground">分鐘</span>
+                    </div>
+                    {(errors.hours || errors.minutes) && (
+                      <p className="text-sm text-destructive">
+                        {errors.hours?.message || errors.minutes?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">日期</label>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <Input
+                      type="date"
+                      {...register('date')}
+                    />
+                    {errors.date && (
+                      <p className="text-sm text-destructive">{errors.date.message}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium w-16">備註</label>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <Input
+                      type="text"
+                      placeholder="選填"
+                      {...register('note')}
+                    />
+                    {errors.note && (
+                      <p className="text-sm text-destructive">{errors.note.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">日期</label>
-                <Input
-                  type="date"
-                  value={manualDate}
-                  onChange={(e) => setManualDate(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium w-16">備註</label>
-                <Input
-                  type="text"
-                  placeholder="選填"
-                  value={manualNote}
-                  onChange={(e) => setManualNote(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setManualOpen(false)}>取消</Button>
-              <Button
-                onClick={handleManualSubmit}
-                disabled={manualHours * 60 + manualMinutes <= 0 || createEntry.isPending}
-              >
-                新增
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setManualOpen(false)}>取消</Button>
+                <Button
+                  type="submit"
+                  disabled={createEntry.isPending}
+                >
+                  新增
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 
