@@ -72,21 +72,70 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
   const utils = trpc.useUtils();
   const boardQuery = trpc.board.byId.useQuery({ id: boardId });
   const createEntry = trpc.timeEntries.create.useMutation({
-    onSuccess: () => {
-      utils.board.byId.invalidate({ id: boardId });
-      toast.success('時間記錄已儲存');
+    onMutate: async (input) => {
+      await utils.board.byId.cancel({ id: boardId });
+      const previous = utils.board.byId.getData({ id: boardId });
+      utils.board.byId.setData({ id: boardId }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          timeEntries: [
+            {
+              id: `optimistic-${Date.now()}`,
+              boardId: input.boardId,
+              taskId: input.taskId ?? null,
+              duration: input.duration,
+              startTime: input.startTime ?? null,
+              endTime: input.endTime ?? null,
+              type: 'MANUAL' as const,
+              note: input.note ?? null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              task: null,
+            },
+            ...old.timeEntries,
+          ],
+        };
+      });
+      return { previous };
     },
-    onError: (error) => {
-      toast.error('儲存失敗', { description: error.message });
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        utils.board.byId.setData({ id: boardId }, context.previous);
+      }
+      toast.error('儲存失敗', { description: _err.message });
+    },
+    onSettled: () => {
+      utils.board.byId.invalidate({ id: boardId });
+    },
+    onSuccess: () => {
+      toast.success('時間記錄已儲存');
     },
   });
   const deleteEntry = trpc.timeEntries.delete.useMutation({
-    onSuccess: () => {
-      utils.board.byId.invalidate({ id: boardId });
-      toast.success('記錄已刪除');
+    onMutate: async (input) => {
+      await utils.board.byId.cancel({ id: boardId });
+      const previous = utils.board.byId.getData({ id: boardId });
+      utils.board.byId.setData({ id: boardId }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          timeEntries: old.timeEntries.filter((e) => e.id !== input.id),
+        };
+      });
+      return { previous };
     },
-    onError: (error) => {
-      toast.error('刪除失敗', { description: error.message });
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        utils.board.byId.setData({ id: boardId }, context.previous);
+      }
+      toast.error('刪除失敗', { description: _err.message });
+    },
+    onSettled: () => {
+      utils.board.byId.invalidate({ id: boardId });
+    },
+    onSuccess: () => {
+      toast.success('記錄已刪除');
     },
   });
 
