@@ -17,6 +17,7 @@ import {
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
 import { trpc } from '~/utils/trpc';
+import { toast } from 'sonner';
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -110,10 +111,22 @@ function TaskTimerContent() {
   );
 
   const createEntry = trpc.timeEntries.create.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      toast.success('時間記錄已儲存');
+    },
+    onError: (error) => {
+      toast.error('儲存失敗', { description: error.message });
+    },
   });
   const deleteEntry = trpc.timeEntries.delete.useMutation({
-    onSuccess: () => utils.task.byId.invalidate({ id: taskId }),
+    onSuccess: () => {
+      utils.task.byId.invalidate({ id: taskId });
+      toast.success('記錄已刪除');
+    },
+    onError: (error) => {
+      toast.error('刪除失敗', { description: error.message });
+    },
   });
 
   const timeEntries = useMemo(() => task?.timeEntries ?? [], [task?.timeEntries]);
