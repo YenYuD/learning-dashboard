@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { getInitials } from '~/lib/utils';
 
 export function UserMenu() {
   const { data: session } = useSession();
@@ -10,12 +11,7 @@ export function UserMenu() {
   if (!session?.user) return null;
 
   const user = session.user;
-  const initials = (user.name ?? user.email ?? '?')
-    .split(' ')
-    .map((s) => s[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(user.name, user.email);
 
   return (
     <div className="flex items-center gap-2 rounded-md px-2 py-1.5">

@@ -1,5 +1,6 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { cn } from '~/lib/utils';
+import { cn, getInitials } from '~/lib/utils';
 
 interface RankRowProps {
   rank: number;
@@ -12,6 +13,8 @@ interface RankRowProps {
 }
 
 export function RankRow({ rank, userId, name, image, value, formatValue, isMe }: RankRowProps) {
+  const initials = getInitials(name);
+
   return (
     <Link
       href={isMe ? '/dashboard' : `/friends/${userId}`}
@@ -27,9 +30,17 @@ export function RankRow({ rank, userId, name, image, value, formatValue, isMe }:
         {rank}
       </span>
       {image ? (
-        <img src={image} alt="" className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover" />
+        <Image
+          src={image}
+          alt={name ?? 'User avatar'}
+          width={40}
+          height={40}
+          className="h-8 w-8 rounded-full object-cover md:h-10 md:w-10"
+        />
       ) : (
-        <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-muted" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-accent-foreground">
+          {initials}
+        </div>
       )}
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm font-medium truncate', isMe && 'text-primary font-semibold')}>

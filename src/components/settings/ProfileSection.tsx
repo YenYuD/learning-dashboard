@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { getInitials } from '~/lib/utils';
 import { trpc } from '~/utils/trpc';
 import { toast } from 'sonner';
 
@@ -32,12 +33,7 @@ export function ProfileSection() {
     setEditing(true);
   };
 
-  const initials = (user?.name ?? user?.email ?? '?')
-    .split(' ')
-    .map((s) => s[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(user?.name, user?.email);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -62,7 +58,7 @@ export function ProfileSection() {
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-accent-foreground">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-lg font-medium text-sidebar-accent-foreground">
             {initials}
           </div>
         )}
