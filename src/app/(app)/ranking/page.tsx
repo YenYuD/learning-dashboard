@@ -26,8 +26,8 @@ export default function RankingPage() {
   const leaderboardQuery = trpc.ranking.leaderboard.useQuery({ dimension, timeRange });
 
   const dimensions: { key: Dimension; label: string }[] = [
-    { key: 'hours', label: 'Study Hours' },
-    { key: 'streak', label: 'Streak' },
+    { key: 'hours', label: '學習時數' },
+    { key: 'streak', label: '連續天數' },
   ];
 
   return (
