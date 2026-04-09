@@ -88,7 +88,7 @@ function LoginForm() {
         <div className="flex h-14 justify-center items-center gap-3 px-4 border-b border-sidebar-border">
           <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
           <span className="text-lg font-semibold text-sidebar-foreground">
-            Learning Dashboard
+            LearnTrack
           </span>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">

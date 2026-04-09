@@ -1,5 +1,5 @@
 /**
- * Seed data for Learning Dashboard
+ * Seed data for LearnTrack
  *
  * Generates realistic learning patterns for 2 demo users across 9 boards,
  * with ~400-600 time entries spanning Jan 1 - Apr 7, 2026.
@@ -68,7 +68,7 @@ function getMonth(d: Date): number {
 }
 
 /** Create a startTime on a given date at a given hour with some minute jitter */
-function makeStartTime(date: Date, baseHour: number, jitterMinutes: number = 30): Date {
+function makeStartTime(date: Date, baseHour: number, jitterMinutes = 30): Date {
   const d = new Date(date);
   d.setHours(baseHour, randInt(0, jitterMinutes), 0, 0);
   return d;
