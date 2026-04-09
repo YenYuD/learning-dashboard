@@ -1,6 +1,6 @@
 {
-  "name": "Learning Dashboard — 學習時間追蹤",
-  "short_name": "LearnDash",
+  "name": "LearnTrack — 學習時間追蹤",
+  "short_name": "LearnTrack",
   "description": "量化每項技能的學習投入時間，用數據檢視成長軌跡",
   "start_url": "/dashboard",
   "display": "standalone",

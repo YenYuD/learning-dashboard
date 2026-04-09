@@ -1,5 +1,5 @@
 /**
- * Analytics router for Learning Dashboard
+ * Analytics router for LearnTrack
  * Provides dashboard summary stats, weekly breakdown, board distribution, and daily trend
  */
 import { router, protectedProcedure } from '../trpc';

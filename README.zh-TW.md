@@ -1,10 +1,10 @@
-# Learning Dashboard
+# LearnTrack
 
 [English](./README.en.md)
 
-![Learning Dashboard OG image](./public/og-image.png)
+![LearnTrack OG image](./public/og-image.png)
 
-Learning Dashboard 是一個以「學習投入可視化」為核心的個人成長管理平台。  
+LearnTrack 是一個以「學習投入可視化」為核心的個人成長管理平台。  
 你可以用看板管理學習項目、用計時器或手動記錄累積時間，並透過儀表板、好友排行與社交互動，把抽象的努力轉成可追蹤的成長軌跡。
 
 ## 專案現況

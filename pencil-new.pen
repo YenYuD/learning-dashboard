@@ -270,7 +270,7 @@
                   "id": "YmMBN",
                   "name": "pageTitle",
                   "fill": "#0D0D0D",
-                  "content": "Learning Dashboard",
+                  "content": "LearnTrack",
                   "fontFamily": "Space Grotesk",
                   "fontSize": 40,
                   "fontWeight": "500"
@@ -7762,7 +7762,7 @@
                   "id": "Lm8if",
                   "name": "logoText",
                   "fill": "#0D0D0D",
-                  "content": "Learning Dashboard",
+                  "content": "LearnTrack",
                   "fontFamily": "Space Grotesk",
                   "fontSize": 20,
                   "fontWeight": "600"

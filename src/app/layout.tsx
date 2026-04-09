@@ -10,14 +10,14 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Learning Dashboard — 學習時間追蹤與成長管理',
-    template: '%s | Learning Dashboard',
+    default: 'LearnTrack — 學習時間追蹤與成長管理',
+    template: '%s | LearnTrack',
   },
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   ),
   description:
-    '同時學習多項技能？Learning Dashboard 幫你量化每項學習的投入時間，用數據檢視自己的成長軌跡。支援計時器、手動記錄、看板管理與數據儀表板。',
+    '同時學習多項技能？LearnTrack 幫你量化每項學習的投入時間，用數據檢視自己的成長軌跡。支援計時器、手動記錄、看板管理與數據儀表板。',
   keywords: [
     '學習追蹤', '時間管理', '學習儀表板', '技能管理',
     'learning tracker', 'time tracking', 'productivity',
@@ -26,22 +26,22 @@ export const metadata: Metadata = {
   authors: [{ name: 'YenYu' }],
   creator: 'YenYu',
   openGraph: {
-    title: 'Learning Dashboard — 量化你的學習投入',
+    title: 'LearnTrack — 量化你的學習投入',
     description:
       '用數據追蹤每項技能的學習時間，讓成長看得見。',
     type: 'website',
     locale: 'zh_TW',
-    siteName: 'Learning Dashboard',
+    siteName: 'LearnTrack',
     images: [{
       url: '/og-image.png',
       width: 1200,
       height: 1324,
-      alt: 'Learning Dashboard',
+      alt: 'LearnTrack',
     }]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Learning Dashboard',
+    title: 'LearnTrack',
     description: '量化學習時間，用數據驅動成長',
   },
   manifest: '/manifest.json',
