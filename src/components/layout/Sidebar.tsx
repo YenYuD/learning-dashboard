@@ -154,7 +154,6 @@ export function Sidebar() {
           <UserMenu />
         </div>
       </aside>
-
       <CreateBoardModal open={createOpen} onOpenChange={setCreateOpen} />
     </>
   );

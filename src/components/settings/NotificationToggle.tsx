@@ -25,9 +25,9 @@ export function NotificationToggle() {
     <div className="space-y-5 rounded-lg border p-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h3 className="font-medium">Push Notifications</h3>
+          <h3 className="font-medium">推播通知</h3>
           <p className="text-sm text-muted-foreground">
-            Receive notifications for friend milestones, ranking changes, and study reminders
+            接收好友里程碑、排行榜變動與學習提醒的通知
           </p>
         </div>
         <button
