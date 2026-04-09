@@ -42,6 +42,8 @@ RUN apt-get update -y && apt-get install -y openssl
 WORKDIR /app
 
 # NEXT_PUBLIC_* vars must be available at build time (inlined into client bundle)
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
 ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
