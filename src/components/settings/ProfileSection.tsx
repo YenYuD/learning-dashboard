@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { trpc } from '~/utils/trpc';
@@ -9,13 +10,15 @@ import { toast } from 'sonner';
 
 export function ProfileSection() {
   const { data: user, isLoading } = trpc.user.me.useQuery();
+  const { update: updateSession } = useSession();
   const [name, setName] = useState('');
   const [editing, setEditing] = useState(false);
   const utils = trpc.useUtils();
 
   const updateProfile = trpc.user.updateProfile.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       utils.user.me.setData(undefined, data);
+      await updateSession({ name: data.name });
       setEditing(false);
       toast.success('個人資料已更新');
     },
@@ -28,6 +31,13 @@ export function ProfileSection() {
     setName(user?.name ?? '');
     setEditing(true);
   };
+
+  const initials = (user?.name ?? user?.email ?? '?')
+    .split(' ')
+    .map((s) => s[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -52,7 +62,9 @@ export function ProfileSection() {
             className="h-12 w-12 rounded-full object-cover"
           />
         ) : (
-          <div className="h-12 w-12 rounded-full bg-muted" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-accent-foreground">
+            {initials}
+          </div>
         )}
         <div className="flex-1">
           {editing ? (
