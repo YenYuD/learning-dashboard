@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '~/server/prisma';
 import { hashPassword } from '~/lib/password';
-import { z } from 'zod';
-
-const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+import { registerPayloadSchema } from '~/lib/validations/auth';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const parsed = registerSchema.safeParse(body);
+    const parsed = registerPayloadSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
