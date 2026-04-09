@@ -55,7 +55,7 @@ export default function InvitePage() {
       <div className="flex w-[440px] flex-col items-center gap-6 rounded-xl border border-border bg-white p-10">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 bg-primary" />
-          <span className="text-xl font-semibold">Learning Dashboard</span>
+          <span className="text-xl font-semibold">LearnTrack</span>
         </div>
 
         <div className="h-px w-full bg-border" />

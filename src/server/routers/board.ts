@@ -1,5 +1,5 @@
 /**
- * Board router for Learning Dashboard
+ * Board router for LearnTrack
  * Handles CRUD operations for boards with task-based and time-only types
  */
 import { router, protectedProcedure } from '../trpc';

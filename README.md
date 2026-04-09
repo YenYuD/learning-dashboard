@@ -1,10 +1,10 @@
-# Learning Dashboard
+# LearnTrack
 
 [繁體中文](./README.zh-TW.md)
 
-![Learning Dashboard OG image](./public/og-image.png)
+![LearnTrack OG image](./public/og-image.png)
 
-Learning Dashboard is a personal growth platform focused on making learning effort visible.  
+LearnTrack is a personal growth platform focused on making learning effort visible.  
 It combines boards, time tracking, analytics, and social features so learners can turn daily effort into a measurable growth record.
 
 ## Current Scope
