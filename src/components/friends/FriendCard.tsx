@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { trpc } from '~/utils/trpc';
+import { getInitials } from '~/lib/utils';
 
 interface FriendCardProps {
   friendshipId: string;
@@ -19,13 +20,17 @@ export function FriendCard({ friendshipId, id, name, image, weeklyInfo }: Friend
     onSuccess: () => utils.friend.list.invalidate(),
   });
 
+  const initials = getInitials(name);
+
   return (
     <div className="flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4">
       <Link href={`/friends/${id}`} className="flex flex-1 items-center gap-3 md:gap-4 min-w-0">
         {image ? (
           <img src={image} alt="" className="h-10 w-10 rounded-full object-cover" />
         ) : (
-          <div className="h-10 w-10 rounded-full bg-muted" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium text-sidebar-accent-foreground">
+            {initials}
+          </div>
         )}
         <div className="flex-1">
           <p className="text-sm font-medium">{name ?? 'Unknown'}</p>

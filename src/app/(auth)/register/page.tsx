@@ -8,7 +8,38 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { registerSchema, type RegisterFormData } from '~/lib/validations/auth';
+import {
+  registerPayloadSchema,
+  registerSchema,
+  type RegisterFormData,
+} from '~/lib/validations/auth';
+
+const passwordRequirements = [
+  {
+    label: '至少 8 個字元',
+    test: (value: string) => value.length >= 8,
+  },
+  {
+    label: '包含 1 個小寫字母',
+    test: (value: string) => /[a-z]/.test(value),
+  },
+  {
+    label: '包含 1 個大寫字母',
+    test: (value: string) => /[A-Z]/.test(value),
+  },
+  {
+    label: '包含 1 個數字',
+    test: (value: string) => /\d/.test(value),
+  },
+  {
+    label: '包含 1 個特殊符號',
+    test: (value: string) => /[^A-Za-z0-9]/.test(value),
+  },
+  {
+    label: '不可包含空白字元',
+    test: (value: string) => /^\S*$/.test(value),
+  },
+] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,24 +49,23 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+  const passwordValue = watch('password', '');
 
   const onSubmit = async (data: RegisterFormData) => {
     setServerError('');
     setLoading(true);
 
     try {
+      const payload = registerPayloadSchema.parse(data);
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const resData = await res.json();
@@ -48,8 +78,8 @@ export default function RegisterPage() {
 
       // Auto sign-in after registration
       const result = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
+        email: payload.email,
+        password: payload.password,
         redirect: false,
       });
 
@@ -112,10 +142,24 @@ export default function RegisterPage() {
           </label>
           <Input
             type="password"
-            placeholder="至少 6 個字元"
+            placeholder="請設定登入密碼"
             {...register('password')}
             disabled={loading}
           />
+          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {passwordRequirements.map((requirement) => {
+              const isMet = passwordValue.length > 0 && requirement.test(passwordValue);
+
+              return (
+                <li
+                  key={requirement.label}
+                  className={isMet ? 'text-emerald-600' : undefined}
+                >
+                  {isMet ? '✓' : '•'} {requirement.label}
+                </li>
+              );
+            })}
+          </ul>
           {errors.password && (
             <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
           )}

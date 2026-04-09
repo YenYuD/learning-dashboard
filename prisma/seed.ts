@@ -188,9 +188,14 @@ async function main() {
   await prisma.friendInvite.deleteMany({
     where: { inviterId: 'user-demo' },
   });
-  // Delete old users if they exist (cascade handles related auth records)
+  // Delete old users if they exist (by ID or email to avoid unique constraint conflicts)
   await prisma.user.deleteMany({
-    where: { id: { in: ['user-demo', 'user-alice'] } },
+    where: {
+      OR: [
+        { id: { in: ['user-demo', 'user-alice'] } },
+        { email: { in: ['demo@learning-dashboard.app', 'alice@example.com'] } },
+      ],
+    },
   });
 
   // =========================================================================
@@ -198,8 +203,15 @@ async function main() {
   // =========================================================================
   const hashedPassword = await bcrypt.hash('demo1234', 12);
 
-  const demoUser = await prisma.user.create({
-    data: {
+  const demoUser = await prisma.user.upsert({
+    where: { id: 'user-demo' },
+    update: {
+      name: 'Demo User',
+      email: 'demo@learning-dashboard.app',
+      password: hashedPassword,
+      timezone: 'Asia/Taipei',
+    },
+    create: {
       id: 'user-demo',
       name: 'Demo User',
       email: 'demo@learning-dashboard.app',
@@ -209,8 +221,15 @@ async function main() {
   });
   console.log(`  User created: ${demoUser.email}`);
 
-  const aliceUser = await prisma.user.create({
-    data: {
+  const aliceUser = await prisma.user.upsert({
+    where: { id: 'user-alice' },
+    update: {
+      name: 'Alice Chen',
+      email: 'alice@example.com',
+      password: hashedPassword,
+      timezone: 'Asia/Taipei',
+    },
+    create: {
       id: 'user-alice',
       name: 'Alice Chen',
       email: 'alice@example.com',

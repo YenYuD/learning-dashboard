@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Flame } from 'lucide-react';
 import { trpc } from '~/utils/trpc';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { getInitials } from '~/lib/utils';
 
 const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
 
@@ -22,9 +23,10 @@ export default function FriendStatsPage() {
   const breakdownQuery = trpc.friendStats.getBoardBreakdown.useQuery({ friendId: params.userId });
 
   const summary = summaryQuery.data;
+  const initials = getInitials(summary?.name);
 
   if (summaryQuery.isLoading) {
-    return <p className="text-muted-foreground">載入中...</p>;
+    return <p className="text-muted-foreground p-10">載入中...</p>;
   }
 
   if (summaryQuery.error) {
@@ -48,7 +50,9 @@ export default function FriendStatsPage() {
         {summary?.image ? (
           <img src={summary.image} alt="" className="h-12 w-12 rounded-full object-cover" />
         ) : (
-          <div className="h-12 w-12 rounded-full bg-muted" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-lg font-medium text-sidebar-accent-foreground">
+            {initials}
+          </div>
         )}
         <div>
           <h1 className="text-2xl font-medium">{summary?.name ?? 'Unknown'}</h1>
