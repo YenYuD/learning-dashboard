@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     default: 'Learning Dashboard — 學習時間追蹤與成長管理',
     template: '%s | Learning Dashboard',
   },
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  ),
   description:
     '同時學習多項技能？Learning Dashboard 幫你量化每項學習的投入時間，用數據檢視自己的成長軌跡。支援計時器、手動記錄、看板管理與數據儀表板。',
   keywords: [
@@ -25,10 +28,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Learning Dashboard — 量化你的學習投入',
     description:
-      '不確定成效不好是不是因為投入不夠？用數據追蹤每項技能的學習時間，讓成長看得見。',
+      '用數據追蹤每項技能的學習時間，讓成長看得見。',
     type: 'website',
     locale: 'zh_TW',
     siteName: 'Learning Dashboard',
+    images: [{
+      url: '/og-image.png',
+      width: 1200,
+      height: 1324,
+      alt: 'Learning Dashboard',
+    }]
   },
   twitter: {
     card: 'summary_large_image',
