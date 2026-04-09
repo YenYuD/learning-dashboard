@@ -1,3 +1,15 @@
+## [1.1.0](https://github.com/YenYuD/learning-dashboard/compare/v1.0.0...v1.1.0) (2026-04-09)
+
+### Features
+
+* **auth:** strengthen registration validation ([222e489](https://github.com/YenYuD/learning-dashboard/commit/222e48927936506a28f297f76eccffcc3ee1a0ec))
+* **seed:** redesign seed data with realistic learning patterns ([8f68432](https://github.com/YenYuD/learning-dashboard/commit/8f68432b526805f8fcef606b3b2918bb1231ca2c))
+
+### Bug Fixes
+
+* **auth:** refresh session profile data ([8c579bb](https://github.com/YenYuD/learning-dashboard/commit/8c579bbe45a5e0d64033b3145f06a846dc292efd))
+* **seed:** use upsert and delete by email to prevent unique constraint errors ([8eee179](https://github.com/YenYuD/learning-dashboard/commit/8eee179e2b4c37ad4e0356b7c3f9ba71378f6c33))
+
 ## 1.0.0 (2026-04-08)
 
 ### Features
