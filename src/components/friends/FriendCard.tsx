@@ -17,7 +17,10 @@ interface FriendCardProps {
 export function FriendCard({ friendshipId, id, name, image, weeklyInfo }: FriendCardProps) {
   const utils = trpc.useUtils();
   const removeMutation = trpc.friend.remove.useMutation({
-    onSuccess: () => utils.friend.list.invalidate(),
+    onSuccess: () => {
+      utils.friend.list.invalidate();
+      utils.ranking.leaderboard.invalidate();
+    },
   });
 
   const initials = getInitials(name);
