@@ -15,7 +15,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile topbar */}
         <header className="flex h-14 items-center border-b bg-card px-4 md:hidden">
           <MobileSidebar />
-          <span className="ml-2 font-semibold">Learning</span>
         </header>
 
         {/* Page content */}

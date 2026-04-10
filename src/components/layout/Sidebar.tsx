@@ -28,7 +28,7 @@ export function Sidebar() {
           <Link href="/dashboard" className="flex items-center gap-3 px-4 h-full">
             <div className="h-8 w-8 shrink-0 bg-sidebar-accent" />
             <span className="text-lg font-semibold text-sidebar-foreground">
-              Learning
+              LearnTrack
             </span>
           </Link>
         </div>
