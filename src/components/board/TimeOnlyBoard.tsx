@@ -251,11 +251,11 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 p-8 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col items-center gap-6 sm:gap-8 p-4 sm:p-8 max-w-2xl mx-auto w-full">
       {/* 計時器 */}
       <Card className="w-full">
-        <CardContent className="flex flex-col items-center gap-6 py-10">
-          <span className="text-6xl font-bold tracking-widest tabular-nums">
+        <CardContent className="flex flex-col items-center gap-4 sm:gap-6 py-6 sm:py-10 px-4 sm:px-6">
+          <span className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-widest tabular-nums">
             {formatTime(elapsed)}
           </span>
 
@@ -387,20 +387,20 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
           {timeEntries.map((entry) => (
             <div
               key={entry.id}
-              className="flex items-center justify-between rounded-lg border bg-card px-4 py-3"
+              className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 sm:px-4 py-3"
             >
-              <div className="flex items-center gap-3 text-sm">
-                <Calendar size={14} className="text-muted-foreground" />
-                <span className="text-muted-foreground">
+              <div className="flex items-center gap-2 sm:gap-3 text-sm min-w-0">
+                <Calendar size={14} className="shrink-0 text-muted-foreground" />
+                <span className="shrink-0 text-muted-foreground">
                   {new Date(entry.startTime ?? entry.createdAt).toLocaleDateString()}
                 </span>
-                <span className="text-sm font-medium">
+                <span className="shrink-0 text-sm font-medium">
                   {formatDuration(entry.duration)}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
                 {entry.note && (
-                  <span className="text-muted-foreground">{entry.note}</span>
+                  <span className="text-muted-foreground truncate max-w-[100px] sm:max-w-[160px]">{entry.note}</span>
                 )}
                 <Button
                   variant="ghost"
