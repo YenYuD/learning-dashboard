@@ -97,7 +97,7 @@ export function BoardSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Board 設定</DialogTitle>
         </DialogHeader>

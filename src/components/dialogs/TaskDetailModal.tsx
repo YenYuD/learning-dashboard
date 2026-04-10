@@ -86,7 +86,7 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>編輯任務</DialogTitle>
         </DialogHeader>

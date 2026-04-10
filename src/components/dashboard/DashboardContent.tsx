@@ -18,7 +18,9 @@ export function DashboardContent() {
   return (
     <>
       <div className="flex flex-col gap-2">
-        <h1 className="text-[40px] font-medium leading-tight">LearnTrack</h1>
+        <h1 className="text-[40px] font-medium leading-tight">LearnTrack
+          <span className="block md:inline md:ml-2 text-sm font-medium text-sidebar-muted-foreground">Your personal learning tracker</span>
+        </h1>
         <TimeRangeFilter value={timeRange} onChange={setTimeRange} />
       </div>
       <Suspense fallback={<ChartSkeleton className="h-24 w-full rounded-lg" />}>
