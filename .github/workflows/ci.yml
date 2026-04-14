@@ -27,6 +27,12 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
+      - name: Run unit tests
+        run: pnpm test-unit run
+        env:
+          SKIP_ENV_VALIDATION: "1"
+          NODE_ENV: test
+
       - name: Lint
         run: pnpm lint
 
