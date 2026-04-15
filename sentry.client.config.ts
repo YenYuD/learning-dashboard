@@ -9,8 +9,11 @@ Sentry.init({
     // 過濾 PII 欄位
     if (event.request?.data) {
       const data = event.request.data as Record<string, unknown>;
-      delete data.password;
-      delete data.token;
+      Object.keys(data).forEach(key => {
+        if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+          delete data[key];
+        }
+      });
       // email 保留（用於 debug），但可依需求刪除
     }
     return event;

@@ -23,15 +23,6 @@ export const loginIpLimiter = redis
     })
   : null;
 
-// 登入失敗：每 email 每 15 分鐘 5 次（嚴格）
-export const loginEmailLimiter = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(5, "15 m"),
-      prefix: "login:fail",
-    })
-  : null;
-
 // 註冊：每 IP 每分鐘 5 次
 export const registerLimiter = redis
   ? new Ratelimit({
@@ -47,5 +38,5 @@ export function getClientIp(request: Request): string {
   if (forwarded) {
     return forwarded.split(",")[0].trim();
   }
-  return "unknown";
+  return "127.0.0.1";
 }

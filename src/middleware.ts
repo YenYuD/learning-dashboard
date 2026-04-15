@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/api/auth/callback/credentials') {
     if (loginIpLimiter) {
       try {
-        const ip = getClientIp(request);
+        const ip = (request as any).ip ?? getClientIp(request);
         const { success, reset } = await loginIpLimiter.limit(ip);
         if (!success) {
           const retryAfter = Math.ceil((reset - Date.now()) / 1000);
