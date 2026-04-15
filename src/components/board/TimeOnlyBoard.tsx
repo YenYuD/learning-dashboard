@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
+import { localDayStartUTC } from '~/lib/timezoneUtils';
 import { trpc } from '~/utils/trpc';
 import { toast } from 'sonner';
 
@@ -229,7 +230,8 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     const totalMinutes = manualHours * 60 + manualMinutes;
     if (totalMinutes <= 0) return;
 
-    const entryDate = new Date(manualDate);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const entryDate = localDayStartUTC(manualDate, tz);
 
     createEntry.mutate({
       boardId,
