@@ -3,6 +3,7 @@
 import type { NextConfig } from 'next';
 import path from 'path';
 import './src/server/env';
+import { withSentryConfig } from '@sentry/nextjs';
 
 /**
  * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
@@ -47,4 +48,10 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+export default withSentryConfig(config, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  disableLogger: true,
+});
