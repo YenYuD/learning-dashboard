@@ -2,11 +2,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '~/server/prisma';
 
 export async function GET() {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 3000),
-    );
-    await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    const timeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('timeout')), 3000);
+    });
+    try {
+      await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     return NextResponse.json({ status: 'ok', db: 'ok' }, { status: 200 });
   } catch (err) {
@@ -18,7 +23,7 @@ export async function GET() {
       );
     }
     return NextResponse.json(
-      { status: 'error', db: 'error', message: error.message },
+      { status: 'error', db: 'error', message: 'Database connection failed' },
       { status: 503 },
     );
   }
