@@ -195,7 +195,6 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     },
     onSuccess: () => {
       toast.success('記錄已更新');
-      setEditingEntry(null);
     },
   });
 
@@ -333,6 +332,7 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
       endTime: entryDate,
       note: editNote || undefined,
     });
+    setEditingEntry(null);
   };
 
   return (
