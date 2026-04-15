@@ -3,28 +3,29 @@ import { prisma } from '~/server/prisma';
 /** Streak 最多回溯天數 */
 const MAX_STREAK_LOOKBACK_DAYS = 90;
 
+/** UTC Date → "YYYY-MM-DD" key（統一格式，避免 getUTCMonth() 0-indexed 與 toISOString() 不一致） */
+function toDateKey(d: Date): string {
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 /** 從 timeEntry 的 createdAt 列表計算連續學習天數 */
 export function calculateStreakFromDates(dates: Date[]): number {
-  const dateSet = new Set(
-    dates.map((d) => {
-      const dt = new Date(d);
-      return `${dt.getUTCFullYear()}-${dt.getUTCMonth()}-${dt.getUTCDate()}`;
-    }),
-  );
+  const dateSet = new Set(dates.map((d) => toDateKey(new Date(d))));
 
   let streak = 0;
   const cursor = new Date();
   cursor.setUTCHours(0, 0, 0, 0);
 
   // If no entry today, start checking from yesterday
-  const todayKey = cursor.toISOString().split('T')[0];
-  if (!dateSet.has(todayKey)) {
+  if (!dateSet.has(toDateKey(cursor))) {
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
 
   while (true) {
-    const key = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
-    if (!dateSet.has(key)) break;
+    if (!dateSet.has(toDateKey(cursor))) break;
     streak++;
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
