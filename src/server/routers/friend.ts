@@ -74,6 +74,14 @@ export const friendRouter = router({
         action: z.enum(['accept', 'decline']),
       }))
       .mutation(async ({ ctx, input }) => {
+        const actor = await prisma.user.findUnique({
+          where: { id: ctx.userId },
+          select: { email: true },
+        });
+        if (actor?.email === 'demo@learning-dashboard.app') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Demo 帳號無法接受好友邀請' });
+        }
+
         const invite = await prisma.friendInvite.findUnique({
           where: { token: input.token },
         });
