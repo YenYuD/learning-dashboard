@@ -14,6 +14,11 @@
 #      echo -n "your-google-client-secret" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
 #      echo -n "your-github-client-id" | gcloud secrets create GITHUB_CLIENT_ID --data-file=-
 #      echo -n "your-github-client-secret" | gcloud secrets create GITHUB_CLIENT_SECRET --data-file=-
+#      echo -n "https://xxx@sentry.io/..." | gcloud secrets create SENTRY_DSN --data-file=-
+#      echo -n "your-org-slug" | gcloud secrets create SENTRY_ORG --data-file=-
+#      echo -n "your-project-slug" | gcloud secrets create SENTRY_PROJECT --data-file=-
+#      echo -n "https://xxx.upstash.io" | gcloud secrets create UPSTASH_REDIS_REST_URL --data-file=-
+#      echo -n "your-token" | gcloud secrets create UPSTASH_REDIS_REST_TOKEN --data-file=-
 #
 #   4. Grant Cloud Build service account permissions:
 #      PROJECT_NUMBER=$(gcloud projects describe learning-dashboard-2026 --format='value(projectNumber)')
@@ -59,24 +64,34 @@ steps:
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${_IMAGE_TAG}'
-      - '--region'
-      - '${_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--port'
-      - '3000'
-      - '--allow-unauthenticated'
-      - '--set-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GITHUB_CLIENT_ID=GITHUB_CLIENT_ID:latest,GITHUB_CLIENT_SECRET=GITHUB_CLIENT_SECRET:latest,VAPID_PUBLIC_KEY=VAPID_PUBLIC_KEY:latest,VAPID_PRIVATE_KEY=VAPID_PRIVATE_KEY:latest,VAPID_EMAIL=VAPID_EMAIL:latest'
-      - '--set-env-vars'
-      - 'NODE_ENV=production,NEXTAUTH_URL=https://${_SERVICE_NAME}-${PROJECT_NUMBER}.${_REGION}.run.app,NEXT_PUBLIC_SITE_URL=${_NEXT_PUBLIC_SITE_URL}'
+      - '-c'
+      - |
+        SECRETS=(
+          "DATABASE_URL=DATABASE_URL:latest"
+          "NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest"
+          "GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest"
+          "GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest"
+          "GITHUB_CLIENT_ID=GITHUB_CLIENT_ID:latest"
+          "GITHUB_CLIENT_SECRET=GITHUB_CLIENT_SECRET:latest"
+          "VAPID_PUBLIC_KEY=VAPID_PUBLIC_KEY:latest"
+          "VAPID_PRIVATE_KEY=VAPID_PRIVATE_KEY:latest"
+          "VAPID_EMAIL=VAPID_EMAIL:latest"
+          "SENTRY_DSN=SENTRY_DSN:latest"
+          "SENTRY_ORG=SENTRY_ORG:latest"
+          "SENTRY_PROJECT=SENTRY_PROJECT:latest"
+          "UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest"
+          "UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest"
+        )
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${_IMAGE_TAG} \
+          --region ${_REGION} \
+          --platform managed \
+          --port 3000 \
+          --allow-unauthenticated \
+          --set-secrets "$$(IFS=,; echo "$${SECRETS[*]}")" \
+          --set-env-vars "NODE_ENV=production,NEXTAUTH_URL=https://${_SERVICE_NAME}-${PROJECT_NUMBER}.${_REGION}.run.app,NEXT_PUBLIC_SITE_URL=${_NEXT_PUBLIC_SITE_URL}"
 
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${_IMAGE_TAG}'
