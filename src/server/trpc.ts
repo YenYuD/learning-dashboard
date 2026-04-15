@@ -12,6 +12,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { transformer } from '~/utils/transformer';
 import type { Context } from './context';
 import z, { ZodError } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 
 const t = initTRPC.context<Context>().create({
   /**
@@ -22,6 +23,10 @@ const t = initTRPC.context<Context>().create({
    * @see https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter({ shape, error }) {
+    // 只回報 INTERNAL_SERVER_ERROR，不傳 ctx 避免 userId/session 進 Sentry
+    if (shape.data?.code === 'INTERNAL_SERVER_ERROR') {
+      Sentry.captureException(error.cause ?? error);
+    }
     return {
       ...shape,
       data: {

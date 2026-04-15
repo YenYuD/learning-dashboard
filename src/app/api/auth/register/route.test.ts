@@ -37,7 +37,7 @@ describe('POST /api/auth/register', () => {
         method: 'POST',
         body: JSON.stringify({
           name: '  Emily Diao  ',
-          email: '  DiaoEmily0830@GMAIL.com  ',
+          email: '  DiaoEmily@GMAIL.com  ',
           password: 'Secret123!',
         }),
       }),
@@ -45,13 +45,13 @@ describe('POST /api/auth/register', () => {
 
     expect(response.status).toBe(201);
     expect(findUnique).toHaveBeenCalledWith({
-      where: { email: 'diaoemily0830@gmail.com' },
+      where: { email: 'diaoemily@gmail.com' },
     });
     expect(hashPassword).toHaveBeenCalledWith('Secret123!');
     expect(create).toHaveBeenCalledWith({
       data: {
         name: 'Emily Diao',
-        email: 'diaoemily0830@gmail.com',
+        email: 'diaoemily@gmail.com',
         password: '<hashed>',
       },
     });
