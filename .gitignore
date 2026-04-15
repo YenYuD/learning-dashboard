@@ -52,3 +52,5 @@ playwright/test-results
 
 
 .eslintcache
+# Sentry Config File
+.env.sentry-build-plugin
