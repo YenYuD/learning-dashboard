@@ -22,13 +22,13 @@ function formatDuration(minutes: number): string {
 }
 
 export function MonthlyCalendar() {
-  // Always use the client's local date so month boundaries are correct
-  const { year, month, todayDay } = useMemo(() => {
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth() + 1, todayDay: d.getDate() };
+  const { year, month, todayDay, timezone } = useMemo(() => {
+    const d  = new Date();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return { year: d.getFullYear(), month: d.getMonth() + 1, todayDay: d.getDate(), timezone: tz };
   }, []);
 
-  const { data, isLoading } = trpc.analytics.monthlyCalendar.useQuery({ year, month });
+  const { data, isLoading } = trpc.analytics.monthlyCalendar.useQuery({ year, month, timezone });
 
   // Map day → minutes for O(1) lookup
   const minutesByDay = useMemo(() => {

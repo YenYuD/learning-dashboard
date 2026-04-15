@@ -16,12 +16,13 @@ function formatDuration(minutes: number): string {
 }
 
 export function MonthlyBoardBreakdown() {
-  const { year, month } = useMemo(() => {
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  const { year, month, timezone } = useMemo(() => {
+    const d  = new Date();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return { year: d.getFullYear(), month: d.getMonth() + 1, timezone: tz };
   }, []);
 
-  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month });
+  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month, timezone });
 
 
   const totalMinutes = useMemo(
