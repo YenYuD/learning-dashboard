@@ -63,9 +63,10 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
   const [manualOpen, setManualOpen] = useState(false);
   const [manualHours, setManualHours] = useState(0);
   const [manualMinutes, setManualMinutes] = useState(0);
-  const [manualDate, setManualDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [manualDate, setManualDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [manualNote, setManualNote] = useState('');
 
   // tRPC queries and mutations

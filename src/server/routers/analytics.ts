@@ -14,6 +14,14 @@ function effectiveDate(entry: { startTime: Date | null; createdAt: Date }): Date
   return entry.startTime ?? entry.createdAt;
 }
 
+/** UTC Date → "YYYY-MM-DD" key（統一格式，避免 getUTCMonth() 0-indexed 造成不一致） */
+function toDateKey(d: Date): string {
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export const analyticsRouter = router({
   /** Dashboard summary: today / week / month / year totals + streak */
   summary: protectedProcedure
@@ -64,7 +72,7 @@ export const analyticsRouter = router({
         const dur = entry.duration;
 
         // streak date set
-        dateSet.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`);
+        dateSet.add(toDateKey(d));
 
         yearMin += dur;
         if (d >= todayStart) todayMin += dur;
@@ -79,8 +87,7 @@ export const analyticsRouter = router({
       let streak = 0;
       const cursor = new Date(todayStart);
       while (true) {
-        const key = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
-        if (!dateSet.has(key)) break;
+        if (!dateSet.has(toDateKey(cursor))) break;
         streak++;
         cursor.setUTCDate(cursor.getUTCDate() - 1);
       }
@@ -326,7 +333,7 @@ export const analyticsRouter = router({
       const buckets = new Map<string, number>();
       for (const entry of entries) {
         const d = effectiveDate(entry);
-        const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+        const key = toDateKey(d);
         buckets.set(key, (buckets.get(key) ?? 0) + entry.duration);
       }
 
@@ -334,7 +341,7 @@ export const analyticsRouter = router({
       for (let i = input.days - 1; i >= 0; i--) {
         const date = new Date(today);
         date.setUTCDate(date.getUTCDate() - i);
-        const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
+        const key = toDateKey(date);
         const minutes = buckets.get(key) ?? 0;
         result.push({
           date: `${date.getUTCMonth() + 1}/${date.getUTCDate()}`,
