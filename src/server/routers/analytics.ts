@@ -5,7 +5,8 @@
 import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
-import { toLocalDateKey, localDayStartUTC } from '~/lib/timezoneUtils';
+import { formatInTimeZone } from 'date-fns-tz';
+import { toLocalDateKey, localDayStartUTC, subLocalDateDays } from '~/lib/timezoneUtils';
 
 // 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
 const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
@@ -17,11 +18,7 @@ function effectiveDate(entry: { startTime: Date | null; createdAt: Date }): Date
 
 /** 取得指定時區的本地星期幾（Mon=0 … Sun=6） */
 function getLocalDayOfWeekMonZero(utcDate: Date, tz: string): number {
-  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(utcDate);
-  const map: Record<string, number> = {
-    Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6,
-  };
-  return map[weekday] ?? 0;
+  return parseInt(formatInTimeZone(utcDate, tz, 'i')) - 1;
 }
 
 /** 取得指定時區的本地日期（1-31） */
@@ -58,10 +55,11 @@ export const analyticsRouter = router({
       const todayStart      = localDayStartUTC(todayDateStr, tz);
       const yesterdayStart  = localDayStartUTC(prevLocalDayStr(todayDateStr, tz), tz);
 
-      // 本週一
+      // 本週一（DST-safe：先算出日期字串再轉 UTC 零時，避免 ms 算術在 DST 日偏移）
       const dayOfWeek       = getLocalDayOfWeekMonZero(todayStart, tz);
-      const weekStart       = new Date(todayStart.getTime() - dayOfWeek * 86400_000);
-      const lastWeekStart   = new Date(weekStart.getTime() - 7 * 86400_000);
+      const mondayStr       = subLocalDateDays(todayDateStr, dayOfWeek);
+      const weekStart       = localDayStartUTC(mondayStr, tz);
+      const lastWeekStart   = localDayStartUTC(subLocalDateDays(mondayStr, 7), tz);
 
       // 本月、上月
       const mm              = String(month).padStart(2, '0');
@@ -144,7 +142,7 @@ export const analyticsRouter = router({
 
       } else if (input.timeRange === 'week') {
         const dayOfWeek = getLocalDayOfWeekMonZero(todayStart, tz);
-        startDate       = new Date(todayStart.getTime() - dayOfWeek * 86400_000);
+        startDate       = localDayStartUTC(subLocalDateDays(todayDateStr, dayOfWeek), tz);
         labels          = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
         getDayIndex     = (date: Date) => getLocalDayOfWeekMonZero(date, tz);
 
@@ -344,8 +342,7 @@ export const analyticsRouter = router({
     .query(async ({ ctx, input }) => {
       const tz           = input.timezone || 'UTC';
       const todayDateStr = toLocalDateKey(new Date(), tz);
-      const todayStart   = localDayStartUTC(todayDateStr, tz);
-      const startDate    = new Date(todayStart.getTime() - (input.days - 1) * 86400_000);
+      const startDate    = localDayStartUTC(subLocalDateDays(todayDateStr, input.days - 1), tz);
 
       const entries = await prisma.timeEntry.findMany({
         where: {
@@ -367,8 +364,7 @@ export const analyticsRouter = router({
 
       const result = [];
       for (let i = input.days - 1; i >= 0; i--) {
-        const date     = new Date(todayStart.getTime() - i * 86400_000);
-        const localKey = toLocalDateKey(date, tz);
+        const localKey = subLocalDateDays(todayDateStr, i);
         const [, monthStr, dayStr] = localKey.split('-');
         const minutes  = buckets.get(localKey) ?? 0;
         result.push({

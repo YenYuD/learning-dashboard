@@ -15,3 +15,14 @@ export function toLocalDateKey(utcDate: Date, timezone: string): string {
 export function localDayStartUTC(localDateStr: string, timezone: string): Date {
   return fromZonedTime(`${localDateStr}T00:00:00`, timezone);
 }
+
+/**
+ * 將 "YYYY-MM-DD" 字串往前推 n 個日曆日，回傳新的 "YYYY-MM-DD" 字串。
+ * 純字串/UTC 運算，不受 DST 影響。
+ * 例：subLocalDateDays("2026-04-14", 3) → "2026-04-11"
+ */
+export function subLocalDateDays(dateStr: string, n: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return formatInTimeZone(d, 'UTC', 'yyyy-MM-dd');
+}

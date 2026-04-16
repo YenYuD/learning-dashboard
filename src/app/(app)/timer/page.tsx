@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
-import { localDayStartUTC } from '~/lib/timezoneUtils';
+import { localDayStartUTC, toLocalDateKey } from '~/lib/timezoneUtils';
 import { trpc } from '~/utils/trpc';
 import { toast } from 'sonner';
 
@@ -126,7 +126,7 @@ function TaskTimerContent() {
     defaultValues: {
       hours: 0,
       minutes: 0,
-      date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
+      date: toLocalDateKey(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone),
       note: '',
     },
   });
