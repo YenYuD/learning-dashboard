@@ -34,7 +34,7 @@ export function MonthlyBoardBreakdown() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -52,7 +52,7 @@ export function MonthlyBoardBreakdown() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">本月尚無學習記錄</p>
@@ -64,7 +64,7 @@ export function MonthlyBoardBreakdown() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+        <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

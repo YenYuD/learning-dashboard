@@ -122,7 +122,7 @@ export function TaskDetailModal({
               size="sm"
               onClick={handleDelete}
               disabled={deleteTask.isPending}
-              className="w-full"
+              className="w-full rounded-md"
             >
               {deleteTask.isPending
                 ? '刪除中...'
