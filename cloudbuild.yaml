@@ -14,7 +14,7 @@
 #      echo -n "your-google-client-secret" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
 #      echo -n "your-github-client-id" | gcloud secrets create GITHUB_CLIENT_ID --data-file=-
 #      echo -n "your-github-client-secret" | gcloud secrets create GITHUB_CLIENT_SECRET --data-file=-
-#      echo -n "https://xxx@sentry.io/..." | gcloud secrets create SENTRY_DSN --data-file=-
+#      # NEXT_PUBLIC_SENTRY_DSN: set as substitution variable in Cloud Build trigger (not Secret Manager)
 #      echo -n "your-org-slug" | gcloud secrets create SENTRY_ORG --data-file=-
 #      echo -n "your-project-slug" | gcloud secrets create SENTRY_PROJECT --data-file=-
 #      echo -n "https://xxx.upstash.io" | gcloud secrets create UPSTASH_REDIS_REST_URL --data-file=-
@@ -51,6 +51,8 @@ steps:
       - 'NEXT_PUBLIC_SITE_URL=${_NEXT_PUBLIC_SITE_URL}'
       - '--build-arg'
       - 'NEXT_PUBLIC_VAPID_PUBLIC_KEY=${_NEXT_PUBLIC_VAPID_PUBLIC_KEY}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_SENTRY_DSN=${_NEXT_PUBLIC_SENTRY_DSN}'
       - '.'
     env:
       - 'DOCKER_BUILDKIT=1'
@@ -78,7 +80,6 @@ steps:
           "VAPID_PUBLIC_KEY=VAPID_PUBLIC_KEY:latest"
           "VAPID_PRIVATE_KEY=VAPID_PRIVATE_KEY:latest"
           "VAPID_EMAIL=VAPID_EMAIL:latest"
-          "SENTRY_DSN=SENTRY_DSN:latest"
           "SENTRY_ORG=SENTRY_ORG:latest"
           "SENTRY_PROJECT=SENTRY_PROJECT:latest"
           "UPSTASH_REDIS_REST_URL=UPSTASH_REDIS_REST_URL:latest"
