@@ -61,7 +61,7 @@ export function BoardSettingsModal({
       router.push('/dashboard');
     },
     onError: (error) => {
-      toast.error('刪除 Board 失敗', { description: error.message });
+      toast.error('刪除看板失敗', { description: error.message });
     },
   });
 
@@ -99,7 +99,7 @@ export function BoardSettingsModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Board 設定</DialogTitle>
+          <DialogTitle>看板設定</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -157,13 +157,13 @@ export function BoardSettingsModal({
               size="sm"
               onClick={handleDelete}
               disabled={deleteBoard.isPending}
-              className="w-full"
+              className="w-full rounded-md"
             >
               {deleteBoard.isPending
                 ? '刪除中...'
                 : confirmDelete
                   ? '確認刪除？此操作無法復原'
-                  : '刪除 Board'}
+                  : '刪除看板'}
             </Button>
           </div>
         </div>

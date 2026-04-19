@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
+import { localDayStartUTC, toLocalDateKey } from '~/lib/timezoneUtils';
 import { trpc } from '~/utils/trpc';
 import { toast } from 'sonner';
 
@@ -125,7 +126,7 @@ function TaskTimerContent() {
     defaultValues: {
       hours: 0,
       minutes: 0,
-      date: new Date().toISOString().slice(0, 10),
+      date: toLocalDateKey(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone),
       note: '',
     },
   });
@@ -282,7 +283,9 @@ function TaskTimerContent() {
 
   const onManualSubmit = (data: ManualEntryFormData) => {
     const totalMinutes = data.hours * 60 + data.minutes;
-    const entryDate = new Date(data.date);
+    // 以瀏覽器時區的午夜作為 startTime，確保「選哪天就是哪天」
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const entryDate = localDayStartUTC(data.date, tz);
     createEntry.mutate({
       boardId,
       taskId,

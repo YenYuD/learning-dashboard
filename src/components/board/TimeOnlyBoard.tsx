@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Pause, Square, Plus, Trash2, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Plus, Trash2, Calendar, Pencil } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from '~/components/ui/dialog';
 import { cn } from '~/lib/utils';
+import { localDayStartUTC } from '~/lib/timezoneUtils';
 import { trpc } from '~/utils/trpc';
 import { toast } from 'sonner';
 
@@ -63,14 +64,22 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
   const [manualOpen, setManualOpen] = useState(false);
   const [manualHours, setManualHours] = useState(0);
   const [manualMinutes, setManualMinutes] = useState(0);
-  const [manualDate, setManualDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [manualDate, setManualDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [manualNote, setManualNote] = useState('');
 
   // tRPC queries and mutations
   const utils = trpc.useUtils();
   const boardQuery = trpc.board.byId.useQuery({ id: boardId });
+
+  // Edit entry state
+  const [editingEntry, setEditingEntry] = useState<NonNullable<typeof boardQuery.data>['timeEntries'][0] | null>(null);
+  const [editHours, setEditHours] = useState(0);
+  const [editMinutes, setEditMinutes] = useState(0);
+  const [editDate, setEditDate] = useState('');
+  const [editNote, setEditNote] = useState('');
 
   const invalidateAnalytics = () => {
     utils.analytics.summary.invalidate();
@@ -151,6 +160,44 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     },
   });
 
+  const updateEntry = trpc.timeEntries.update.useMutation({
+    onMutate: async (input) => {
+      await utils.board.byId.cancel({ id: boardId });
+      const previous = utils.board.byId.getData({ id: boardId });
+      utils.board.byId.setData({ id: boardId }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          timeEntries: old.timeEntries.map((e) =>
+            e.id === input.id
+              ? {
+                  ...e,
+                  duration: input.duration ?? e.duration,
+                  startTime: input.startTime ?? e.startTime,
+                  endTime: input.endTime ?? e.endTime,
+                  note: input.note !== undefined ? input.note : e.note,
+                }
+              : e
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        utils.board.byId.setData({ id: boardId }, context.previous);
+      }
+      toast.error('更新失敗', { description: _err.message });
+    },
+    onSettled: () => {
+      utils.board.byId.invalidate({ id: boardId });
+      invalidateAnalytics();
+    },
+    onSuccess: () => {
+      toast.success('記錄已更新');
+    },
+  });
+
   const timeEntries = useMemo(() => boardQuery.data?.timeEntries ?? [], [boardQuery.data?.timeEntries]);
 
   const { weeklyHours, monthlyHours } = useMemo(() => {
@@ -228,7 +275,8 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
     const totalMinutes = manualHours * 60 + manualMinutes;
     if (totalMinutes <= 0) return;
 
-    const entryDate = new Date(manualDate);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const entryDate = localDayStartUTC(manualDate, tz);
 
     createEntry.mutate({
       boardId,
@@ -248,6 +296,43 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
 
   const handleDelete = (id: string) => {
     deleteEntry.mutate({ id });
+  };
+
+  const handleEditOpen = (entry: NonNullable<typeof boardQuery.data>['timeEntries'][0]) => {
+    setEditingEntry(entry);
+    setEditHours(Math.floor(entry.duration / 60));
+    setEditMinutes(entry.duration % 60);
+    const d = new Date(entry.startTime ?? entry.createdAt);
+    setEditDate(
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    );
+    setEditNote(entry.note ?? '');
+  };
+
+  const handleEditSubmit = () => {
+    if (!editingEntry) return;
+    if (editHours < 0 || editHours > 23) {
+      toast.error('小時數須介於 0 ~ 23');
+      return;
+    }
+    if (editMinutes < 0 || editMinutes > 59) {
+      toast.error('分鐘數須介於 0 ~ 59');
+      return;
+    }
+    const totalMinutes = editHours * 60 + editMinutes;
+    if (totalMinutes <= 0) return;
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const entryDate = localDayStartUTC(editDate, tz);
+
+    updateEntry.mutate({
+      id: editingEntry.id,
+      duration: totalMinutes,
+      startTime: entryDate,
+      endTime: entryDate,
+      note: editNote || undefined,
+    });
+    setEditingEntry(null);
   };
 
   return (
@@ -375,6 +460,66 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!editingEntry} onOpenChange={(open) => { if (!open) setEditingEntry(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯記錄</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium w-16">時長</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  value={editHours}
+                  onChange={(e) => setEditHours(Number(e.target.value))}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">小時</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={editMinutes}
+                  onChange={(e) => setEditMinutes(Number(e.target.value))}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">分鐘</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium w-16">日期</label>
+              <Input
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium w-16">備註</label>
+              <Input
+                type="text"
+                placeholder="選填"
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEntry(null)}>
+              取消
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={editHours * 60 + editMinutes <= 0 || updateEntry.isPending}
+            >
+              儲存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* 最近記錄 */}
       <div className="w-full">
         <h3 className="text-sm font-semibold mb-3">最近記錄</h3>
@@ -402,15 +547,26 @@ export function TimeOnlyBoard({ boardId, boardName: _boardName }: TimeOnlyBoardP
                 {entry.note && (
                   <span className="text-muted-foreground truncate max-w-[100px] sm:max-w-[160px]">{entry.note}</span>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => handleDelete(entry.id)}
-                  disabled={deleteEntry.isPending}
-                >
-                  <Trash2 size={14} />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    onClick={() => handleEditOpen(entry)}
+                    disabled={updateEntry.isPending}
+                  >
+                    <Pencil size={13} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => handleDelete(entry.id)}
+                    disabled={deleteEntry.isPending}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
