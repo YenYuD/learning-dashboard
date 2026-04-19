@@ -5,6 +5,8 @@
 import { router, protectedProcedure } from '../trpc';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { formatInTimeZone } from 'date-fns-tz';
+import { toLocalDateKey, localDayStartUTC, subLocalDateDays } from '~/lib/timezoneUtils';
 
 // 8 色依色相環每 45° 取一色，飽和度壓在 35-50%（復古陶瓷風），任意組合皆和諧
 const CHART_COLORS = ['#6A9CC8', '#5BAD8A', '#D4A84C', '#C87474', '#9884CC', '#4AB8B8', '#D08456', '#BC7CAC'];
@@ -14,39 +16,63 @@ function effectiveDate(entry: { startTime: Date | null; createdAt: Date }): Date
   return entry.startTime ?? entry.createdAt;
 }
 
+/** 取得指定時區的本地星期幾（Mon=0 … Sun=6） */
+function getLocalDayOfWeekMonZero(utcDate: Date, tz: string): number {
+  return parseInt(formatInTimeZone(utcDate, tz, 'i')) - 1;
+}
+
+/** 取得指定時區的本地日期（1-31） */
+function getLocalDay(utcDate: Date, tz: string): number {
+  return parseInt(toLocalDateKey(utcDate, tz).split('-')[2], 10);
+}
+
+/** 取得指定時區的本地月份（0-11） */
+function getLocalMonth0(utcDate: Date, tz: string): number {
+  return parseInt(toLocalDateKey(utcDate, tz).split('-')[1], 10) - 1;
+}
+
+/** 往回一個本地日（處理 DST 安全） */
+function prevLocalDayStr(localDateStr: string, tz: string): string {
+  const midnight = localDayStartUTC(localDateStr, tz);
+  return toLocalDateKey(new Date(midnight.getTime() - 1), tz);
+}
+
 export const analyticsRouter = router({
   /** Dashboard summary: today / week / month / year totals + streak */
   summary: protectedProcedure
     .input(z.object({
-      // Client passes its local date as "YYYY-MM-DD" so server-side date
-      // boundaries match the user's timezone rather than server UTC.
-      todayDate: z.string(),
+      timezone: z.string(), // IANA timezone string, e.g. "Asia/Taipei"
     }))
     .query(async ({ ctx, input }) => {
-      // Anchor all calculations to the client's local midnight (treated as UTC midnight)
-      const todayStart = new Date(input.todayDate + 'T00:00:00.000Z');
-      const y = todayStart.getUTCFullYear();
-      const m = todayStart.getUTCMonth();
+      const tz = input.timezone || 'UTC';
 
-      // Monday of current week
-      const weekStart = new Date(todayStart);
-      weekStart.setUTCDate(weekStart.getUTCDate() - ((weekStart.getUTCDay() + 6) % 7));
+      // 今天的本地日期字串與各時間邊界（UTC timestamp）
+      const todayDateStr    = toLocalDateKey(new Date(), tz);
+      const [yStr, mStr]    = todayDateStr.split('-');
+      const year            = parseInt(yStr);
+      const month           = parseInt(mStr); // 1-indexed
 
-      const monthStart = new Date(Date.UTC(y, m, 1));
-      const yearStart  = new Date(Date.UTC(y, 0, 1));
+      const todayStart      = localDayStartUTC(todayDateStr, tz);
+      const yesterdayStart  = localDayStartUTC(prevLocalDayStr(todayDateStr, tz), tz);
 
-      const yesterdayStart = new Date(todayStart);
-      yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+      // 本週一（DST-safe：先算出日期字串再轉 UTC 零時，避免 ms 算術在 DST 日偏移）
+      const dayOfWeek       = getLocalDayOfWeekMonZero(todayStart, tz);
+      const mondayStr       = subLocalDateDays(todayDateStr, dayOfWeek);
+      const weekStart       = localDayStartUTC(mondayStr, tz);
+      const lastWeekStart   = localDayStartUTC(subLocalDateDays(mondayStr, 7), tz);
 
-      const lastWeekStart = new Date(weekStart);
-      lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
+      // 本月、上月
+      const mm              = String(month).padStart(2, '0');
+      const monthStart      = localDayStartUTC(`${year}-${mm}-01`, tz);
+      const prevMonthNum    = month === 1 ? 12 : month - 1;
+      const prevMonthYear   = month === 1 ? year - 1 : year;
+      const lastMonthStart  = localDayStartUTC(`${prevMonthYear}-${String(prevMonthNum).padStart(2, '0')}-01`, tz);
 
-      const lastMonthStart = new Date(Date.UTC(y, m - 1, 1));
+      // 今年
+      const yearStart       = localDayStartUTC(`${year}-01-01`, tz);
 
       const userFilter = { board: { user_id: ctx.userId } };
 
-      // Fetch all entries from the start of the year (covers all needed ranges)
-      // and use effectiveDate (startTime ?? createdAt) for bucketing.
       const allEntries = await prisma.timeEntry.findMany({
         where: { ...userFilter, OR: [
           { startTime: { gte: yearStart } },
@@ -57,32 +83,32 @@ export const analyticsRouter = router({
 
       let todayMin = 0, yesterdayMin = 0, weekMin = 0, lastWeekMin = 0;
       let monthMin = 0, lastMonthMin = 0, yearMin = 0;
-      const dateSet = new Set<string>();
+      const dateSet = new Set<string>(); // local date keys "YYYY-MM-DD"
 
       for (const entry of allEntries) {
-        const d = effectiveDate(entry);
+        const d   = effectiveDate(entry);
         const dur = entry.duration;
 
-        // streak date set
-        dateSet.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`);
+        dateSet.add(toLocalDateKey(d, tz));
 
         yearMin += dur;
-        if (d >= todayStart) todayMin += dur;
+        if (d >= todayStart)      todayMin     += dur;
         else if (d >= yesterdayStart) yesterdayMin += dur;
-        if (d >= weekStart) weekMin += dur;
-        else if (d >= lastWeekStart) lastWeekMin += dur;
-        if (d >= monthStart) monthMin += dur;
+        if (d >= weekStart)       weekMin      += dur;
+        else if (d >= lastWeekStart)  lastWeekMin  += dur;
+        if (d >= monthStart)      monthMin     += dur;
         else if (d >= lastMonthStart) lastMonthMin += dur;
       }
 
-      // Count consecutive days backwards from today
+      // Streak：從今天往回數連續有記錄的天數（今天無記錄則從昨天開始，與 streak.ts 邏輯一致）
       let streak = 0;
-      const cursor = new Date(todayStart);
-      while (true) {
-        const key = `${cursor.getUTCFullYear()}-${cursor.getUTCMonth()}-${cursor.getUTCDate()}`;
-        if (!dateSet.has(key)) break;
+      let cursorStr = todayDateStr;
+      if (!dateSet.has(cursorStr)) {
+        cursorStr = prevLocalDayStr(cursorStr, tz);
+      }
+      while (dateSet.has(cursorStr)) {
         streak++;
-        cursor.setUTCDate(cursor.getUTCDate() - 1);
+        cursorStr = prevLocalDayStr(cursorStr, tz);
       }
 
       return {
@@ -96,41 +122,44 @@ export const analyticsRouter = router({
 
   /** Weekly bar chart – time per board per day/week, filtered by timeRange */
   weeklyByBoard: protectedProcedure
-    .input(
-      z.object({
-        timeRange: z.enum(['today', 'week', 'month', 'year']).default('week'),
-        todayDate: z.string(),
-      }),
-    )
+    .input(z.object({
+      timeRange: z.enum(['today', 'week', 'month', 'year']).default('week'),
+      timezone:  z.string(),
+    }))
     .query(async ({ ctx, input }) => {
-      // Anchor to the client's local midnight (treated as UTC midnight)
-      const today = new Date(input.todayDate + 'T00:00:00.000Z');
-      const y = today.getUTCFullYear();
-      const m = today.getUTCMonth();
+      const tz           = input.timezone || 'UTC';
+      const todayDateStr = toLocalDateKey(new Date(), tz);
+      const [yStr, mStr] = todayDateStr.split('-');
+      const year         = parseInt(yStr);
+      const month        = parseInt(mStr); // 1-indexed
+      const todayStart   = localDayStartUTC(todayDateStr, tz);
 
       let startDate: Date;
       let labels: string[];
       let getDayIndex: (date: Date) => number;
 
       if (input.timeRange === 'today') {
-        startDate = today;
-        labels = ['今天'];
+        startDate   = todayStart;
+        labels      = ['今天'];
         getDayIndex = () => 0;
+
       } else if (input.timeRange === 'week') {
-        startDate = new Date(today);
-        startDate.setUTCDate(startDate.getUTCDate() - ((startDate.getUTCDay() + 6) % 7));
-        labels = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-        getDayIndex = (date: Date) => (date.getUTCDay() + 6) % 7;
+        const dayOfWeek = getLocalDayOfWeekMonZero(todayStart, tz);
+        startDate       = localDayStartUTC(subLocalDateDays(todayDateStr, dayOfWeek), tz);
+        labels          = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+        getDayIndex     = (date: Date) => getLocalDayOfWeekMonZero(date, tz);
+
       } else if (input.timeRange === 'month') {
-        // month – group by week within the month
-        startDate = new Date(Date.UTC(y, m, 1));
-        labels = ['第1週', '第2週', '第3週', '第4週', '第5週'];
-        getDayIndex = (date: Date) => Math.min(Math.floor((date.getUTCDate() - 1) / 7), 4);
+        const mm    = String(month).padStart(2, '0');
+        startDate   = localDayStartUTC(`${year}-${mm}-01`, tz);
+        labels      = ['第1週', '第2週', '第3週', '第4週', '第5週'];
+        getDayIndex = (date: Date) => Math.min(Math.floor((getLocalDay(date, tz) - 1) / 7), 4);
+
       } else {
-        // year – group by month
-        startDate = new Date(Date.UTC(y, 0, 1));
-        labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-        getDayIndex = (date: Date) => date.getUTCMonth();
+        // year
+        startDate   = localDayStartUTC(`${year}-01-01`, tz);
+        labels      = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        getDayIndex = (date: Date) => getLocalMonth0(date, tz);
       }
 
       const entries = await prisma.timeEntry.findMany({
@@ -149,9 +178,9 @@ export const analyticsRouter = router({
       for (const entry of entries) {
         const index = getDayIndex(effectiveDate(entry));
         if (index >= 0 && index < labels.length) {
-          const boardName = entry.board.name;
-          const current = (result[index][boardName] as number) || 0;
-          result[index][boardName] = +(current + entry.duration / 60).toFixed(1);
+          const boardName              = entry.board.name;
+          const current                = (result[index][boardName] as number) || 0;
+          result[index][boardName]     = +(current + entry.duration / 60).toFixed(1);
         }
       }
 
@@ -164,13 +193,11 @@ export const analyticsRouter = router({
       return { data: result, boardNames, boardColors };
     }),
 
-  /** Donut chart – time distribution by board */
+  /** Donut chart – time distribution by board（since 由 client 傳入本地午夜，無需時區） */
   boardDistribution: protectedProcedure
-    .input(
-      z.object({
-        since: z.date().optional(),
-      }),
-    )
+    .input(z.object({
+      since: z.date().optional(),
+    }))
     .query(async ({ ctx, input }) => {
       const baseFilter: Record<string, unknown> = {
         board: { user_id: ctx.userId },
@@ -202,7 +229,7 @@ export const analyticsRouter = router({
         select: { id: true, name: true, color: true },
       });
 
-      const boardMap = new Map(boards.map((b) => [b.id, b]));
+      const boardMap    = new Map(boards.map((b) => [b.id, b]));
       const totalMinutes = entries.reduce((s, e) => s + (e._sum.duration ?? 0), 0);
 
       return entries.map((e, i) => {
@@ -221,12 +248,19 @@ export const analyticsRouter = router({
   /** Monthly calendar – total minutes per day for a given year/month */
   monthlyCalendar: protectedProcedure
     .input(z.object({
-      year:  z.number(),
-      month: z.number(), // 1-12, from client's local date
+      year:     z.number(),
+      month:    z.number(), // 1-12
+      timezone: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
-      const monthEnd   = new Date(Date.UTC(input.year, input.month,     1)); // exclusive
+      const tz         = input.timezone || 'UTC';
+      const mm         = String(input.month).padStart(2, '0');
+      const nextMonth  = input.month === 12 ? 1 : input.month + 1;
+      const nextYear   = input.month === 12 ? input.year + 1 : input.year;
+      const nextMM     = String(nextMonth).padStart(2, '0');
+
+      const monthStart = localDayStartUTC(`${input.year}-${mm}-01`, tz);
+      const monthEnd   = localDayStartUTC(`${nextYear}-${nextMM}-01`, tz);
 
       const entries = await prisma.timeEntry.findMany({
         where: {
@@ -241,24 +275,30 @@ export const analyticsRouter = router({
 
       const buckets = new Map<number, number>();
       for (const entry of entries) {
-        const day = effectiveDate(entry).getUTCDate();
+        const day = getLocalDay(effectiveDate(entry), tz);
         buckets.set(day, (buckets.get(day) ?? 0) + entry.duration);
       }
 
       return Array.from(buckets.entries()).map(([day, minutes]) => ({ day, minutes }));
     }),
 
-  /** Monthly board breakdown – total minutes per board for current month */
+  /** Monthly board breakdown – total minutes per board for a given month */
   monthlyBoardBreakdown: protectedProcedure
     .input(z.object({
-      year:   z.number(),
-      month:  z.number(), // 1-12
+      year:     z.number(),
+      month:    z.number(), // 1-12
+      timezone: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      const monthStart = new Date(Date.UTC(input.year, input.month - 1, 1));
-      const monthEnd   = new Date(Date.UTC(input.year, input.month,     1));
+      const tz         = input.timezone || 'UTC';
+      const mm         = String(input.month).padStart(2, '0');
+      const nextMonth  = input.month === 12 ? 1 : input.month + 1;
+      const nextYear   = input.month === 12 ? input.year + 1 : input.year;
+      const nextMM     = String(nextMonth).padStart(2, '0');
 
-      // Cannot use groupBy with COALESCE, so fetch + group manually
+      const monthStart = localDayStartUTC(`${input.year}-${mm}-01`, tz);
+      const monthEnd   = localDayStartUTC(`${nextYear}-${nextMM}-01`, tz);
+
       const rawEntries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
@@ -289,8 +329,8 @@ export const analyticsRouter = router({
 
       return entries
         .map((e) => ({
-          name: boardMap.get(e.boardId)?.name ?? 'Unknown',
-          color: boardMap.get(e.boardId)?.color ?? null,
+          name:    boardMap.get(e.boardId)?.name    ?? 'Unknown',
+          color:   boardMap.get(e.boardId)?.color   ?? null,
           minutes: e._sum.duration ?? 0,
         }))
         .sort((a, b) => b.minutes - a.minutes);
@@ -298,19 +338,15 @@ export const analyticsRouter = router({
 
   /** Daily trend – hours per day for the last N days */
   dailyTrend: protectedProcedure
-    .input(
-      z.object({
-        days: z.number().default(7),
-        todayDate: z.string(),
-      }),
-    )
+    .input(z.object({
+      days:     z.number().default(7),
+      timezone: z.string(),
+    }))
     .query(async ({ ctx, input }) => {
-      // Anchor to the client's local midnight (treated as UTC midnight)
-      const today = new Date(input.todayDate + 'T00:00:00.000Z');
-      const startDate = new Date(today);
-      startDate.setUTCDate(startDate.getUTCDate() - (input.days - 1));
+      const tz           = input.timezone || 'UTC';
+      const todayDateStr = toLocalDateKey(new Date(), tz);
+      const startDate    = localDayStartUTC(subLocalDateDays(todayDateStr, input.days - 1), tz);
 
-      // Fetch all entries in range at once instead of N queries
       const entries = await prisma.timeEntry.findMany({
         where: {
           board: { user_id: ctx.userId },
@@ -322,22 +358,20 @@ export const analyticsRouter = router({
         select: { duration: true, startTime: true, createdAt: true },
       });
 
-      // Bucket by day (using UTC to match client's date)
+      // 以本地日期分桶
       const buckets = new Map<string, number>();
       for (const entry of entries) {
-        const d = effectiveDate(entry);
-        const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+        const key = toLocalDateKey(effectiveDate(entry), tz);
         buckets.set(key, (buckets.get(key) ?? 0) + entry.duration);
       }
 
       const result = [];
       for (let i = input.days - 1; i >= 0; i--) {
-        const date = new Date(today);
-        date.setUTCDate(date.getUTCDate() - i);
-        const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
-        const minutes = buckets.get(key) ?? 0;
+        const localKey = subLocalDateDays(todayDateStr, i);
+        const [, monthStr, dayStr] = localKey.split('-');
+        const minutes  = buckets.get(localKey) ?? 0;
         result.push({
-          date: `${date.getUTCMonth() + 1}/${date.getUTCDate()}`,
+          date:  `${parseInt(monthStr)}/${parseInt(dayStr)}`,
           hours: +(minutes / 60).toFixed(1),
         });
       }

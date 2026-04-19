@@ -16,12 +16,13 @@ function formatDuration(minutes: number): string {
 }
 
 export function MonthlyBoardBreakdown() {
-  const { year, month } = useMemo(() => {
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  const { year, month, timezone } = useMemo(() => {
+    const d  = new Date();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return { year: d.getFullYear(), month: d.getMonth() + 1, timezone: tz };
   }, []);
 
-  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month });
+  const { data, isLoading } = trpc.analytics.monthlyBoardBreakdown.useQuery({ year, month, timezone });
 
 
   const totalMinutes = useMemo(
@@ -33,7 +34,7 @@ export function MonthlyBoardBreakdown() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -51,7 +52,7 @@ export function MonthlyBoardBreakdown() {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+          <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">本月尚無學習記錄</p>
@@ -63,7 +64,7 @@ export function MonthlyBoardBreakdown() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各科時數</CardTitle>
+        <CardTitle className="text-base">{MONTH_NAMES[month - 1]}月各看板時數</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

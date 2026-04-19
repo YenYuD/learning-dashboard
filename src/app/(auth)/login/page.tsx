@@ -23,6 +23,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
+  const isDemoHidden = callbackUrl.includes('/invite/');
 
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -96,24 +97,28 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Demo button */}
-      <Button
-        variant="outline"
-        className="w-full border-dashed border-2"
-        onClick={handleDemoLogin}
-        disabled={loading}
-      >
-        🎯 Continue as Demo
-      </Button>
+      {/* Demo button — hidden when arriving from an invite link */}
+      {!isDemoHidden && (
+        <>
+          <Button
+            variant="outline"
+            className="w-full border-dashed border-2"
+            onClick={handleDemoLogin}
+            disabled={loading}
+          >
+            🎯 Continue as Demo
+          </Button>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
-        </div>
-      </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* OAuth buttons */}
       <div className="space-y-2">
