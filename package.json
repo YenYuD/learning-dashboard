@@ -1,6 +1,6 @@
 {
   "name": "learning-dashboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Learning & Growth Dashboard - Personal growth management system with task management and time tracking",
   "private": true,
   "scripts": {

@@ -1,3 +1,25 @@
+## [1.2.0](https://github.com/YenYuD/learning-dashboard/compare/v1.1.0...v1.2.0) (2026-04-19)
+
+### Features
+
+* **invite:** block demo account from accepting friend invites ([f50de69](https://github.com/YenYuD/learning-dashboard/commit/f50de6939e15917fe60cf5a3e9f632d360a02a9a))
+* **monitoring:** 使用官方 wizard 完成 Sentry 整合 ([1b9dd81](https://github.com/YenYuD/learning-dashboard/commit/1b9dd81b1eeb5dad75b3cc0cce1904f6ba746795))
+* **time-entry:** add edit dialog with optimistic update ([1f25b7e](https://github.com/YenYuD/learning-dashboard/commit/1f25b7ec30b02c5c8e5965c2bab884929f058320))
+* **timezone:** 用瀏覽器時區取代 UTC 作為日期分界 ([581ad0b](https://github.com/YenYuD/learning-dashboard/commit/581ad0bd36b54f19236c4fbb59a5a948abe6e2c5))
+* 加入 Sentry 錯誤監控與 Rate Limiting 保護 ([fa07122](https://github.com/YenYuD/learning-dashboard/commit/fa07122ee1f217bcb69b3d7c570f8c1d0b15ccbd))
+* 新增 health check endpoint 及 CI 單元測試 ([8c62255](https://github.com/YenYuD/learning-dashboard/commit/8c62255dee519e5f8fa1c65c676146e57f83dd00))
+
+### Bug Fixes
+
+* **analytics:** add grace period to inline streak calculation ([b165e3f](https://github.com/YenYuD/learning-dashboard/commit/b165e3f5090bfeea83cacf78d8d29d250a6d9eac))
+* **invite:** hide demo login button when redirected from invite link ([dd0d8a9](https://github.com/YenYuD/learning-dashboard/commit/dd0d8a9ba3eac280f4478708f1876746a61ff14b))
+* **time-entry:** close edit dialog optimistically after mutate, not in onSuccess ([f026eed](https://github.com/YenYuD/learning-dashboard/commit/f026eedeb14198a33b97c8548ea42090a93016b3))
+* **timezone:** use DST-safe date arithmetic across analytics and streak ([3bcb4c0](https://github.com/YenYuD/learning-dashboard/commit/3bcb4c003cff9a5fe22e9e3285b5d79a687e9596))
+* **timezone:** 修正 streak key 格式不一致與表單預設日期時區問題 ([ebecd85](https://github.com/YenYuD/learning-dashboard/commit/ebecd85c41d0a28422201489ad9d23566f66b459))
+* **ui:** use consistent Chinese copy and add rounded-md to delete buttons ([3f34820](https://github.com/YenYuD/learning-dashboard/commit/3f3482004eadedb2dbae1f9b2fafb76966e2227a))
+* 修正 health check timer 洩漏與 error message 安全問題 ([7957a2a](https://github.com/YenYuD/learning-dashboard/commit/7957a2ae963c3f398529a007e57a915f5fb266ef))
+* 修正 Sentry PII 過濾與 Rate Limiting 安全問題 ([88b1fb2](https://github.com/YenYuD/learning-dashboard/commit/88b1fb20360f60fb8c9ebfcea3ef55756f3fde43))
+
 ## [1.1.0](https://github.com/YenYuD/learning-dashboard/compare/v1.0.0...v1.1.0) (2026-04-09)
 
 ### Features
