@@ -100,9 +100,12 @@ export const analyticsRouter = router({
         else if (d >= lastMonthStart) lastMonthMin += dur;
       }
 
-      // Streak：從今天往回數連續有記錄的天數
+      // Streak：從今天往回數連續有記錄的天數（今天無記錄則從昨天開始，與 streak.ts 邏輯一致）
       let streak = 0;
       let cursorStr = todayDateStr;
+      if (!dateSet.has(cursorStr)) {
+        cursorStr = prevLocalDayStr(cursorStr, tz);
+      }
       while (dateSet.has(cursorStr)) {
         streak++;
         cursorStr = prevLocalDayStr(cursorStr, tz);
